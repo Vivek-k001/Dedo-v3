@@ -72,65 +72,101 @@ class _GlassButtonState extends State<GlassButton>
           scale: _scale.value,
           child: child,
         ),
-        child: ClipRRect(
-          borderRadius: radius,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              width: widget.width,
-              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    accent.withValues(alpha: isDark ? 0.55 : 0.75),
-                    accent.withValues(alpha: isDark ? 0.25 : 0.45),
-                  ],
-                ),
-                borderRadius: radius,
-                border: Border.all(
-                  color: accent.withValues(alpha: 0.6),
-                  width: 1.0,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.35),
-                    blurRadius: 20,
-                    spreadRadius: -4,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+        child: Container(
+          width: widget.width,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.35),
+                blurRadius: 20,
+                spreadRadius: -4,
+                offset: const Offset(0, 6),
               ),
-              child: Center(
-                child: widget.isLoading
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (widget.icon != null) ...[
-                            Icon(widget.icon, color: Colors.white, size: 18),
-                            const SizedBox(width: 8),
-                          ],
-                          Text(
-                            widget.label,
-                            style: widget.textStyle ??
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.3,
-                                ),
-                          ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: radius,
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+              child: Stack(
+                children: [
+                  // Base color layer (Saturating the refraction)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          accent.withValues(alpha: isDark ? 0.65 : 0.85),
+                          accent.withValues(alpha: isDark ? 0.35 : 0.55),
                         ],
                       ),
+                    ),
+                    child: Center(
+                      child: widget.isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (widget.icon != null) ...[
+                                  Icon(widget.icon, color: Colors.white, size: 18),
+                                  const SizedBox(width: 8),
+                                ],
+                                Text(
+                                  widget.label,
+                                  style: widget.textStyle ??
+                                      const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0.3,
+                                      ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                  // Specular Reflection & Refraction Rim Layer
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: radius,
+                          border: Border(
+                            top: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.6), width: 1.5),
+                            left: BorderSide(
+                                color: Colors.white.withValues(alpha: 0.3), width: 1.0),
+                            right: BorderSide(
+                                color: Colors.black.withValues(alpha: 0.1), width: 1.0),
+                            bottom: BorderSide(
+                                color: Colors.black.withValues(alpha: 0.2), width: 1.5),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.4), // Glare
+                              Colors.white.withValues(alpha: 0.0), // Clear center
+                              Colors.black.withValues(alpha: 0.0), // Clear center
+                              accent.withValues(alpha: 0.4),       // Internal refraction volume bounce
+                            ],
+                            stops: const [0.0, 0.3, 0.7, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

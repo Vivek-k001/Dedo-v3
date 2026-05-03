@@ -29,10 +29,10 @@ class GlassTheme {
 
   // ─── Gradients ────────────────────────────────────────────────────────────
   static const List<Color> backgroundGradientLight = [
-    Color(0xFFE8D5FF),
-    Color(0xFFD0E8FF),
-    Color(0xFFCCF0FF),
-    Color(0xFFFFE0F0),
+    Color(0xFFF2F2F7),
+    Color(0xFFEBEBF5),
+    Color(0xFFE5E5EA),
+    Color(0xFFD1D1D6),
   ];
 
   static const List<Color> backgroundGradientDark = [

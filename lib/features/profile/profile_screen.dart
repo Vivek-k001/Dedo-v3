@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../core/theme/glass_theme.dart';
 import '../../core/widgets/glass_container.dart';
 import '../../core/widgets/glass_button.dart';
@@ -366,98 +367,117 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            GlassContainer(
-              padding: const EdgeInsets.all(20),
-              borderRadius: GlassTheme.radiusLarge,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            Stack(
+              children: [
+                GlassContainer(
+                  padding: const EdgeInsets.all(20),
+                  borderRadius: GlassTheme.radiusLarge,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF7C4DFF),
-                              Color(0xFF40C4FF),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(14),
-                          boxShadow: [
-                            BoxShadow(
-                              color: GlassTheme.accentPrimary.withValues(alpha: 0.4),
-                              blurRadius: 14,
-                              spreadRadius: -4,
-                            )
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'D',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Row(
                         children: [
-                          Text(
-                            'DEDO',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? Colors.white
-                                  : const Color(0xFF1A0A2E),
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFF7C4DFF),
+                                  Color(0xFF40C4FF),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: GlassTheme.accentPrimary.withValues(alpha: 0.4),
+                                  blurRadius: 14,
+                                  spreadRadius: -4,
+                                )
+                              ],
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'D',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                          Text(
-                            'Version 1.0.0',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.45)
-                                  : Colors.black.withValues(alpha: 0.4),
-                            ),
+                          const SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'DEDO',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? Colors.white
+                                      : const Color(0xFF1A0A2E),
+                                ),
+                              ),
+                              Text(
+                                'Version 1.0.0',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.45)
+                                      : Colors.black.withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'A simple and powerful task management app designed for productivity.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.55)
+                              : Colors.black.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _AboutRow(
+                          icon: Icons.code_rounded,
+                          label: 'Developer',
+                          value: 'VNJ Softworks',
+                          isDark: isDark),
+                      const SizedBox(height: 10),
+                      _AboutRow(
+                          icon: Icons.email_rounded,
+                          label: 'Email',
+                          value: 'sdedodedo80@gmail.com',
+                          isDark: isDark),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'A simple and powerful task management app designed for productivity.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.5,
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.55)
-                          : Colors.black.withValues(alpha: 0.5),
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(GlassTheme.radiusLarge),
+                      child: Shimmer.fromColors(
+                        baseColor: Colors.transparent,
+                        highlightColor: isDark 
+                            ? Colors.white.withValues(alpha: 0.15) 
+                            : Colors.white.withValues(alpha: 0.6),
+                        period: const Duration(milliseconds: 3000),
+                        child: Container(color: Colors.black),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  _AboutRow(
-                      icon: Icons.code_rounded,
-                      label: 'Developer',
-                      value: 'VNJ Softworks',
-                      isDark: isDark),
-                  const SizedBox(height: 10),
-                  _AboutRow(
-                      icon: Icons.email_rounded,
-                      label: 'Email',
-                      value: 'sdedodedo80@gmail.com',
-                      isDark: isDark),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
