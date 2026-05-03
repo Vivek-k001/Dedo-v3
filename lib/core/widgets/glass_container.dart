@@ -65,10 +65,22 @@ class GlassContainer extends StatelessWidget {
           height: height,
           padding: padding,
           decoration: BoxDecoration(
-            gradient: GlassTheme.glassGradient(isDark),
-            color: fill,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                fill.withValues(alpha: effectiveFillOpacity + 0.15), // Specular Top
+                fill, // Core
+                fill.withValues(alpha: effectiveFillOpacity * 0.4), // Dark refractor volume
+              ],
+              stops: const [0.0, 0.2, 1.0],
+            ),
             borderRadius: radius,
-            border: Border.all(color: border, width: GlassTheme.borderWidth),
+            border: showBorder 
+                ? Border.all(
+                    color: Colors.white.withValues(alpha: effectiveBorderOpacity * 0.9), 
+                    width: 1.2)
+                : null,
           ),
           child: child,
         ),

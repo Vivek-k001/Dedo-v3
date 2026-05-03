@@ -141,15 +141,9 @@ class _GlassButtonState extends State<GlassButton>
                       child: Container(
                         decoration: BoxDecoration(
                           borderRadius: radius,
-                          border: Border(
-                            top: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.6), width: 1.5),
-                            left: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.3), width: 1.0),
-                            right: BorderSide(
-                                color: Colors.black.withValues(alpha: 0.1), width: 1.0),
-                            bottom: BorderSide(
-                                color: Colors.black.withValues(alpha: 0.2), width: 1.5),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 1.2,
                           ),
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,

@@ -5,6 +5,7 @@ import '../../core/theme/glass_theme.dart';
 import '../../core/widgets/glass_container.dart';
 import '../../core/widgets/glass_button.dart';
 import '../../core/widgets/glass_text_field.dart';
+import '../../core/widgets/glass_switch.dart';
 import '../../core/widgets/shimmer_glass.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/profile_provider.dart';
@@ -324,34 +325,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
             const SizedBox(height: 12),
             GlassContainer(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               borderRadius: GlassTheme.radiusLarge,
-              child: SwitchListTile(
-                title: Text(
-                  'Dark Mode',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+              child: Row(
+                children: [
+                  Icon(
+                    isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                    color: GlassTheme.accentPrimary,
+                    size: 28,
                   ),
-                ),
-                subtitle: Text(
-                  isDark ? 'On' : 'Off',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.45)
-                        : Colors.black.withValues(alpha: 0.4),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Dark Mode',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+                          ),
+                        ),
+                        Text(
+                          isDark ? 'On' : 'Off',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.5)
+                                : Colors.black.withValues(alpha: 0.45),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                secondary: Icon(
-                  isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                  color: GlassTheme.accentPrimary,
-                ),
-                value: isDark,
-                activeThumbColor: GlassTheme.accentPrimary,
-                onChanged: (_) =>
-                    ref.read(themeProvider.notifier).toggle(),
-                contentPadding: EdgeInsets.zero,
+                  GlassSwitch(
+                    value: isDark,
+                    onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
+                  ),
+                ],
               ),
             ),
 
@@ -467,12 +479,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(GlassTheme.radiusLarge),
                       child: Shimmer.fromColors(
-                        baseColor: Colors.transparent,
+                        baseColor: Colors.white.withValues(alpha: 0.0),
                         highlightColor: isDark 
-                            ? Colors.white.withValues(alpha: 0.15) 
-                            : Colors.white.withValues(alpha: 0.6),
+                            ? Colors.white.withValues(alpha: 0.2) 
+                            : Colors.white.withValues(alpha: 0.4),
                         period: const Duration(milliseconds: 3000),
-                        child: Container(color: Colors.black),
+                        child: Container(color: Colors.white),
                       ),
                     ),
                   ),
