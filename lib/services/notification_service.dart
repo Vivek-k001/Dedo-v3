@@ -120,9 +120,13 @@ class NotificationService {
   }
 
   static Future<void> cancelTaskNotifications(String taskId) async {
-    await _plugin.cancel(_notifId(taskId, 'r'));
-    await _plugin.cancel(_notifId(taskId, 's'));
-    await _plugin.cancel(_notifId(taskId, 'e'));
+    try {
+      await _plugin.cancel(_notifId(taskId, 'r'));
+      await _plugin.cancel(_notifId(taskId, 's'));
+      await _plugin.cancel(_notifId(taskId, 'e'));
+    } catch (_) {
+      // Ignore silently if notification plugin cannot cancel
+    }
   }
 
   static int _notifId(String taskId, String suffix) {

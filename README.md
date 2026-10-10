@@ -14,6 +14,10 @@
 
 </div>
 
+<p align="center">
+  <img src="assets/screenshots/dedo_mockup.png" width="100%" alt="Dedo Product Showcase Mockup" />
+</p>
+
 ---
 
 ## 🌟 Overview
@@ -31,7 +35,7 @@
 
 | Onboarding | Tasks Dashboard | Quick Add Task | Productivity & Stats |
 |:---:|:---:|:---:|:---:|
-| <img src="assets/screenshots/welcome.jpg" width="220" alt="Onboarding Screen"/> | <img src="assets/screenshots/home_dark.jpg" width="220" alt="Home Dashboard"/> | <img src="assets/screenshots/create_task.jpg" width="220" alt="Quick Add Modal"/> | <img src="assets/screenshots/analytics.jpg" width="220" alt="Productivity Analytics"/> |
+| <img src="assets/screenshots/welcome.png" width="220" alt="Onboarding Screen"/> | <img src="assets/screenshots/home_dark.png" width="220" alt="Home Dashboard"/> | <img src="assets/screenshots/create_task.png" width="220" alt="Quick Add Modal"/> | <img src="assets/screenshots/analytics.png" width="220" alt="Productivity Analytics"/> |
 
 </div>
 
