@@ -301,7 +301,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
 
           const SizedBox(height: 16),
 
-          // ─── iOS 26 Segmented Control ───────────────────────────────────────
+          // ─── Liquid Glass Segmented Control ───────────────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(

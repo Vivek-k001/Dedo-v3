@@ -12,7 +12,7 @@ class LiquidNavItem {
   const LiquidNavItem({required this.icon, required this.label});
 }
 
-/// Authentic iOS 26 Liquid Glass Bottom Navigation Bar.
+/// Authentic Liquid Glass Bottom Navigation Bar.
 ///
 /// Crafted strictly to Apple's Liquid Glass aesthetics:
 /// - Pure crystalline glass material with real-time backdrop blur.
@@ -417,7 +417,7 @@ class _LiquidGlassNavBarState extends State<LiquidGlassNavBar>
   }
 }
 
-/// The authentic iOS 26 Liquid Glass optical bubble.
+/// The authentic Liquid Glass optical bubble.
 /// Monochromatic, crystalline specular highlights with zero artificial rainbow colors.
 class _LiquidGlassBubble extends StatelessWidget {
   final bool isDark;

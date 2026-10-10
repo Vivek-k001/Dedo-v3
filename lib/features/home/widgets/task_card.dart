@@ -9,7 +9,7 @@ import '../../../providers/category_provider.dart';
 import '../../../providers/task_provider.dart';
 import 'telegram_context_menu.dart';
 
-/// Telegram iOS 26 style swipe-to-action task card with liquid spring physics,
+/// Liquid Glass style swipe-to-action task card with liquid spring physics,
 /// physical resistance swipe gestures, haptic ticks, long-press preview, and inset rounded geometry.
 class TaskCard extends ConsumerStatefulWidget {
   final Task task;
