@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/glass_theme.dart';
 import '../../../core/widgets/glass_container.dart';
@@ -68,26 +69,20 @@ class _DateStripState extends State<DateStrip> {
           final isToday = _isToday(date);
 
           return GestureDetector(
-            onTap: () => widget.onDateSelected(date),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              widget.onDateSelected(date);
+            },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOut,
-              width: 56,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: 54,
               child: GlassContainer(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 borderRadius: GlassTheme.radiusMedium,
-                fillOpacity: isSelected ? 0.35 : (isDark ? 0.06 : 0.12),
+                fillOpacity: isSelected ? (isDark ? 0.9 : 1.0) : (isDark ? 0.12 : 0.08),
                 tintColor: isSelected ? GlassTheme.accentPrimary : null,
-                shadows: isSelected
-                    ? [
-                        BoxShadow(
-                          color: GlassTheme.accentPrimary.withValues(alpha: 0.4),
-                          blurRadius: 16,
-                          spreadRadius: -4,
-                          offset: const Offset(0, 4),
-                        )
-                      ]
-                    : null,
+                shadows: null,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/glass_theme.dart';
@@ -13,15 +12,15 @@ void showTaskModal(BuildContext context, WidgetRef ref, Task task,
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Task Modal',
-    barrierColor: Colors.black.withValues(alpha: 0.45),
-    transitionDuration: const Duration(milliseconds: 350),
+    barrierColor: Colors.black.withValues(alpha: 0.4),
+    transitionDuration: const Duration(milliseconds: 220),
     pageBuilder: (_, __, ___) => _TaskModal(task: task, onEdit: onEdit),
     transitionBuilder: (ctx, anim, _, child) {
       return FadeTransition(
         opacity: anim,
         child: ScaleTransition(
-          scale: Tween<double>(begin: 0.88, end: 1.0).animate(
-            CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+          scale: Tween<double>(begin: 0.94, end: 1.0).animate(
+            CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
           ),
           child: child,
         ),
@@ -40,18 +39,16 @@ class _TaskModal extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GlassContainer(
-              borderRadius: GlassTheme.radiusLarge,
-              padding: const EdgeInsets.all(28),
-              fillOpacity: isDark ? 0.18 : 0.22,
-              child: Column(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GlassContainer(
+            borderRadius: GlassTheme.radiusLarge,
+            padding: const EdgeInsets.all(28),
+            fillOpacity: isDark ? 0.18 : 0.22,
+            child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -148,8 +145,7 @@ class _TaskModal extends ConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, String taskId) {
@@ -160,71 +156,68 @@ class _TaskModal extends ConsumerWidget {
       barrierLabel: 'Confirm',
       barrierColor: Colors.black.withValues(alpha: 0.5),
       transitionDuration: const Duration(milliseconds: 250),
-      pageBuilder: (_, __, ___) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: GlassContainer(
-                borderRadius: GlassTheme.radiusLarge,
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.delete_forever_rounded,
-                        color: GlassTheme.accentDanger, size: 44),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Delete Task?',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color:
-                            isDark ? Colors.white : const Color(0xFF1A0A2E),
-                      ),
+      pageBuilder: (_, __, ___) => Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: GlassContainer(
+              borderRadius: GlassTheme.radiusLarge,
+              padding: const EdgeInsets.all(28),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.delete_forever_rounded,
+                      color: GlassTheme.accentDanger, size: 44),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Delete Task?',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color:
+                          isDark ? Colors.white : const Color(0xFF1A0A2E),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'This action cannot be undone.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.5)
-                            : Colors.black.withValues(alpha: 0.45),
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This action cannot be undone.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.5)
+                          : Colors.black.withValues(alpha: 0.45),
                     ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GlassButton(
-                            label: 'Cancel',
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.2)
-                                : const Color(0xFF7C7C99),
-                            onPressed: () => Navigator.pop(context),
-                          ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GlassButton(
+                          label: 'Cancel',
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.2)
+                              : const Color(0xFF7C7C99),
+                          onPressed: () => Navigator.pop(context),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: GlassButton(
-                            label: 'Delete',
-                            color: GlassTheme.accentDanger,
-                            onPressed: () {
-                              ref
-                                  .read(taskProvider.notifier)
-                                  .deleteTask(taskId);
-                              Navigator.pop(context);
-                            },
-                          ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GlassButton(
+                          label: 'Delete',
+                          color: GlassTheme.accentDanger,
+                          onPressed: () {
+                            ref
+                                .read(taskProvider.notifier)
+                                .deleteTask(taskId);
+                            Navigator.pop(context);
+                          },
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),

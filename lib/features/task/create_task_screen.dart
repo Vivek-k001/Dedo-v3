@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -33,6 +34,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   String? _categoryId;
   Color _selectedColor = const Color(0xFF7C4DFF);
   bool _saving = false;
+  bool _categoryError = false;
 
   final _reminders = [5, 10, 15, 30];
   final _colors = [
@@ -117,6 +119,33 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_categoryId == null) {
+      HapticFeedback.heavyImpact();
+      setState(() => _categoryError = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.category_rounded, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Text(
+                'Please select a category for this task',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFFF453A),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
     setState(() => _saving = true);
 
     final task = Task(
@@ -286,21 +315,71 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ─── Category ─────────────────────────────────────────────
-                  _SectionLabel(label: 'Category', isDark: isDark),
+                  // ─── Category (Required) ──────────────────────────────────
+                  Row(
+                    children: [
+                      _SectionLabel(label: 'Category', isDark: isDark),
+                      const SizedBox(width: 4),
+                      Text(
+                        '*',
+                        style: TextStyle(
+                          color: _categoryError
+                              ? const Color(0xFFFF453A)
+                              : GlassTheme.accentPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (_categoryError) ...[
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Required',
+                          style: TextStyle(
+                            color: Color(0xFFFF453A),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: categories
-                        .map((cat) => _CategoryChip(
-                              cat: cat,
-                              selected: _categoryId == cat.id,
-                              onTap: () => setState(() => _categoryId =
-                                  _categoryId == cat.id ? null : cat.id),
-                              isDark: isDark,
-                            ))
-                        .toList(),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: _categoryError
+                        ? const EdgeInsets.all(8)
+                        : EdgeInsets.zero,
+                    decoration: _categoryError
+                        ? BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(GlassTheme.radiusMedium),
+                            border: Border.all(
+                              color: const Color(0xFFFF453A)
+                                  .withValues(alpha: 0.6),
+                              width: 1.2,
+                            ),
+                            color:
+                                const Color(0xFFFF453A).withValues(alpha: 0.06),
+                          )
+                        : null,
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: categories
+                          .map((cat) => _CategoryChip(
+                                cat: cat,
+                                selected: _categoryId == cat.id,
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _categoryId = cat.id;
+                                    _categoryError = false;
+                                  });
+                                },
+                                isDark: isDark,
+                              ))
+                          .toList(),
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -327,15 +406,6 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
                                     border: _selectedColor == c
                                         ? Border.all(
                                             color: Colors.white, width: 3)
-                                        : null,
-                                    boxShadow: _selectedColor == c
-                                        ? [
-                                            BoxShadow(
-                                              color: c.withValues(alpha: 0.5),
-                                              blurRadius: 12,
-                                              spreadRadius: -2,
-                                            )
-                                          ]
                                         : null,
                                   ),
                                   child: _selectedColor == c
@@ -422,15 +492,6 @@ class _CategoryChip extends StatelessWidget {
             color: selected ? color : Colors.transparent,
             width: 1.5,
           ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    spreadRadius: -4,
-                  )
-                ]
-              : null,
         ),
         child: Text(
           cat.name,

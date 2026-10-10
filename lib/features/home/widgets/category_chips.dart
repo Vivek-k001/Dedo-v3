@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/glass_theme.dart';
 import '../../../core/widgets/glass_container.dart';
@@ -78,24 +79,19 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
         child: GlassContainer(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           borderRadius: GlassTheme.radiusLarge,
           tintColor: isSelected ? color : null,
-          fillOpacity: isSelected ? 0.35 : (isDark ? 0.06 : 0.12),
-          shadows: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 14,
-                    spreadRadius: -4,
-                    offset: const Offset(0, 3),
-                  )
-                ]
-              : null,
+          fillOpacity: isSelected ? (isDark ? 0.85 : 0.95) : (isDark ? 0.12 : 0.08),
+          shadows: null,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

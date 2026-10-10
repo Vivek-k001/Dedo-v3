@@ -10,17 +10,12 @@ class GlassBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colors = GlassTheme.backgroundGradient(isDark);
+    final bg = GlassTheme.scaffoldBg(isDark);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
-          stops: const [0.0, 0.3, 0.65, 1.0],
-        ),
-      ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      color: bg,
       child: child,
     );
   }

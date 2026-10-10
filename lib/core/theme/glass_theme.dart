@@ -1,105 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 /// Global glass design tokens — single source of truth for all glass surfaces.
 class GlassTheme {
   GlassTheme._();
 
-  // ─── Blur ─────────────────────────────────────────────────────────────────
-  static const double blurLight = 18.0;
-  static const double blurDark = 14.0;
-  static const double blurHeavy = 30.0; // modal backgrounds
+  // ─── iOS Colors & Tokens ──────────────────────────────────────────────────
+  static const Color iosBlue = CupertinoColors.systemBlue;
+  static const Color iosIndigo = CupertinoColors.systemIndigo;
+  static const Color iosGreen = CupertinoColors.systemGreen;
+  static const Color iosOrange = CupertinoColors.systemOrange;
+  static const Color iosRed = CupertinoColors.systemRed;
+  static const Color iosPurple = CupertinoColors.systemPurple;
+  static const Color iosTeal = CupertinoColors.systemTeal;
 
-  // ─── Fill opacities ───────────────────────────────────────────────────────
-  static const double fillLightMode = 0.14;
-  static const double fillDarkMode = 0.08;
-  static const double fillCard = 0.10;
-  static const double fillModal = 0.18;
-  static const double fillNavBar = 0.12;
+  // iOS Backgrounds
+  static const Color iosLightBg = Color(0xFFF2F2F7); // iOS grouped background
+  static const Color iosLightCard = Colors.white;
+  static const Color iosLightSecondary = Color(0xFFE5E5EA);
 
-  // ─── Border ───────────────────────────────────────────────────────────────
-  static const double borderLight = 0.45;
-  static const double borderDark = 0.18;
-  static const double borderWidth = 1.0;
+  static const Color iosDarkBg = Color(0xFF000000); // iOS dark true black / OLED
+  static const Color iosDarkCard = Color(0xFF1C1C1E); // iOS secondary grouped bg
+  static const Color iosDarkSecondary = Color(0xFF2C2C2E);
 
-  // ─── Radius ───────────────────────────────────────────────────────────────
-  static const double radiusSmall = 16.0;
-  static const double radiusMedium = 24.0;
-  static const double radiusLarge = 32.0;
-  static const double radiusXL = 40.0;
+  // ─── Border & Corner Radii ────────────────────────────────────────────────
+  static const double radiusSmall = 12.0;
+  static const double radiusMedium = 16.0;
+  static const double radiusLarge = 22.0;
+  static const double radiusXL = 28.0;
 
-  // ─── Gradients ────────────────────────────────────────────────────────────
-  static const List<Color> backgroundGradientLight = [
-    Color(0xFFF2F2F7),
-    Color(0xFFEBEBF5),
-    Color(0xFFE5E5EA),
-    Color(0xFFD1D1D6),
-  ];
+  // ─── Accents ──────────────────────────────────────────────────────────────
+  static const Color accentPrimary = Color(0xFF007AFF); // Apple system blue
+  static const Color accentSecondary = Color(0xFF5856D6); // Apple indigo
+  static const Color accentSuccess = Color(0xFF34C759); // Apple system green
+  static const Color accentWarning = Color(0xFFFF9500); // Apple system orange
+  static const Color accentDanger = Color(0xFFFF3B30); // Apple system red
 
-  static const List<Color> backgroundGradientDark = [
-    Color(0xFF1A0A2E),
-    Color(0xFF0D1B3E),
-    Color(0xFF0A2E2E),
-    Color(0xFF2A0A1E),
-  ];
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  static Color cardBg(bool isDark) => isDark ? iosDarkCard : iosLightCard;
 
-  // ─── Glow colors ────────────────────────────────────────────────────────────
-  static const Color glowPurple = Color(0x556C35D6);
-  static const Color glowBlue = Color(0x553575D6);
-  static const Color glowTeal = Color(0x5535C4D6);
-  static const Color glowPink = Color(0x55D635A8);
-
-  // ─── Accent ───────────────────────────────────────────────────────────────
-  static const Color accentPrimary = Color(0xFF7C4DFF);
-  static const Color accentSecondary = Color(0xFF40C4FF);
-  static const Color accentSuccess = Color(0xFF69F0AE);
-  static const Color accentWarning = Color(0xFFFFD740);
-  static const Color accentDanger = Color(0xFFFF5252);
-
-  // ─── Helpers ───────────────────────────────────────────────────────────────
-
-  static Color fillColor(bool isDark) =>
-      isDark
-          ? Colors.white.withValues(alpha: fillDarkMode)
-          : Colors.white.withValues(alpha: fillLightMode);
+  static Color scaffoldBg(bool isDark) => isDark ? iosDarkBg : iosLightBg;
 
   static Color borderColor(bool isDark) =>
-      isDark
-          ? Colors.white.withValues(alpha: borderDark)
-          : Colors.white.withValues(alpha: borderLight);
-
-  static double blurSigma(bool isDark) => isDark ? blurDark : blurLight;
+      isDark ? const Color(0xFF38383A) : const Color(0xFFE5E5EA);
 
   static List<Color> backgroundGradient(bool isDark) =>
-      isDark ? backgroundGradientDark : backgroundGradientLight;
-
-  static LinearGradient glassGradient(bool isDark) => LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: isDark
-            ? [
-                Colors.white.withValues(alpha: 0.10),
-                Colors.white.withValues(alpha: 0.03),
-              ]
-            : [
-                Colors.white.withValues(alpha: 0.35),
-                Colors.white.withValues(alpha: 0.10),
-              ],
-      );
+      isDark ? [iosDarkBg, iosDarkBg] : [iosLightBg, iosLightBg];
 
   static List<BoxShadow> glassShadow(bool isDark) => [
         BoxShadow(
           color: isDark
-              ? Colors.black.withValues(alpha: 0.4)
-              : Colors.black.withValues(alpha: 0.12),
-          blurRadius: 24,
-          spreadRadius: -4,
-          offset: const Offset(0, 8),
-        ),
-        BoxShadow(
-          color: accentPrimary.withValues(alpha: isDark ? 0.2 : 0.10),
-          blurRadius: 40,
-          spreadRadius: -8,
-          offset: const Offset(0, 4),
+              ? Colors.black.withValues(alpha: 0.3)
+              : Colors.black.withValues(alpha: 0.04),
+          blurRadius: 10,
+          spreadRadius: 0,
+          offset: const Offset(0, 2),
         ),
       ];
 }

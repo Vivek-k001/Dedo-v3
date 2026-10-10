@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'glass_theme.dart';
 
@@ -16,107 +17,104 @@ class AppTheme {
   static ThemeData _buildTheme({required Brightness brightness}) {
     final isDark = brightness == Brightness.dark;
     final base = isDark ? ThemeData.dark() : ThemeData.light();
+    final primary = GlassTheme.accentPrimary;
+    final scaffoldBg = GlassTheme.scaffoldBg(isDark);
+    final cardBg = GlassTheme.cardBg(isDark);
 
     return base.copyWith(
       brightness: brightness,
-      scaffoldBackgroundColor: Colors.transparent,
+      scaffoldBackgroundColor: scaffoldBg,
+      primaryColor: primary,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: GlassTheme.accentPrimary,
+        seedColor: primary,
         brightness: brightness,
       ).copyWith(
-        primary: GlassTheme.accentPrimary,
+        primary: primary,
         secondary: GlassTheme.accentSecondary,
-        surface: Colors.transparent,
+        surface: cardBg,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(base.textTheme).copyWith(
-        displayLarge: GoogleFonts.outfit(
-          fontSize: 32,
+      textTheme: GoogleFonts.interTextTheme(base.textTheme).copyWith(
+        displayLarge: GoogleFonts.inter(
+          fontSize: 34,
           fontWeight: FontWeight.w700,
-          color: isDark ? Colors.white : const Color(0xFF1A0A2E),
-          letterSpacing: -0.5,
+          color: isDark ? Colors.white : Colors.black,
+          letterSpacing: -0.8,
         ),
-        titleLarge: GoogleFonts.outfit(
+        titleLarge: GoogleFonts.inter(
           fontSize: 22,
+          fontWeight: FontWeight.w700,
+          color: isDark ? Colors.white : Colors.black,
+          letterSpacing: -0.4,
+        ),
+        titleMedium: GoogleFonts.inter(
+          fontSize: 17,
           fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+          color: isDark ? Colors.white : Colors.black,
+          letterSpacing: -0.2,
         ),
-        titleMedium: GoogleFonts.outfit(
+        bodyLarge: GoogleFonts.inter(
           fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.9)
-              : const Color(0xFF2A1A3E),
-        ),
-        bodyLarge: GoogleFonts.outfit(
-          fontSize: 15,
           fontWeight: FontWeight.w400,
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.85)
-              : const Color(0xFF3A2A4E),
+          color: isDark ? const Color(0xFFEBEBF5) : const Color(0xFF1C1C1E),
         ),
-        bodyMedium: GoogleFonts.outfit(
-          fontSize: 13,
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.65)
-              : const Color(0xFF5A4A6E),
+        bodyMedium: GoogleFonts.inter(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: const Color(0xFF8E8E93),
         ),
-        labelSmall: GoogleFonts.outfit(
-          fontSize: 11,
+        labelSmall: GoogleFonts.inter(
+          fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.50)
-              : const Color(0xFF7A6A8E),
+          color: const Color(0xFF8E8E93),
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleTextStyle: GoogleFonts.outfit(
-          fontSize: 26,
-          fontWeight: FontWeight.w700,
-          color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+        centerTitle: true,
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : Colors.black,
         ),
         iconTheme: IconThemeData(
-          color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+          color: primary,
         ),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.transparent,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: cardBg,
         elevation: 0,
+        selectedItemColor: primary,
+        unselectedItemColor: const Color(0xFF8E8E93),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: GlassTheme.accentPrimary.withValues(alpha: 0.9),
-        contentTextStyle: GoogleFonts.outfit(color: Colors.white),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: false,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(GlassTheme.radiusMedium),
-          borderSide: BorderSide.none,
-        ),
-        labelStyle: GoogleFonts.outfit(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.6)
-              : const Color(0xFF5A4A6E),
-        ),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: Colors.transparent,
+        backgroundColor: cardBg,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(GlassTheme.radiusLarge),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: isDark ? const Color(0xFF2C2C2E) : Colors.black87,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(GlassTheme.radiusMedium),
+        ),
+        contentTextStyle: GoogleFonts.inter(color: Colors.white),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primary,
+        elevation: 2,
+        shape: const CircleBorder(),
+      ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
         },
       ),
     );

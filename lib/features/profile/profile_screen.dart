@@ -88,26 +88,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   // Avatar
                   Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          GlassTheme.accentPrimary,
-                          GlassTheme.accentSecondary,
-                        ],
-                      ),
+                    width: 68,
+                    height: 68,
+                    decoration: const BoxDecoration(
+                      color: GlassTheme.accentPrimary,
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: GlassTheme.accentPrimary.withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          spreadRadius: -4,
-                          offset: const Offset(0, 6),
-                        )
-                      ],
                     ),
                     child: Center(
                       child: Text(
@@ -220,42 +205,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.1,
+            Row(
               children: [
-                StatCard(
-                  label: 'Pending',
-                  value: '$pending',
-                  icon: Icons.pending_actions_rounded,
-                  color: GlassTheme.accentWarning,
+                Expanded(
+                  child: StatCard(
+                    label: 'Pending',
+                    value: '$pending',
+                    icon: Icons.pending_actions_rounded,
+                    color: GlassTheme.accentWarning,
+                  ),
                 ),
-                StatCard(
-                  label: 'Completed',
-                  value: '$completed',
-                  icon: Icons.check_circle_rounded,
-                  color: GlassTheme.accentSuccess,
-                ),
-                StatCard(
-                  label: 'Total Tasks',
-                  value: '${allTasks.length}',
-                  icon: Icons.task_alt_rounded,
-                  color: GlassTheme.accentPrimary,
-                ),
-                StatCard(
-                  label: 'Day Streak 🔥',
-                  value: '$streak',
-                  icon: Icons.local_fire_department_rounded,
-                  color: const Color(0xFFFF6D00),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatCard(
+                    label: 'Completed',
+                    value: '$completed',
+                    icon: Icons.check_circle_rounded,
+                    color: GlassTheme.accentSuccess,
+                  ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: StatCard(
+                    label: 'Total Tasks',
+                    value: '${allTasks.length}',
+                    icon: Icons.task_alt_rounded,
+                    color: GlassTheme.accentPrimary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatCard(
+                    label: 'Day Streak 🔥',
+                    value: '$streak',
+                    icon: Icons.local_fire_department_rounded,
+                    color: const Color(0xFFFF6D00),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
 
             // ─── Analytics ────────────────────────────────────────────────
             Text(
@@ -390,25 +383,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Row(
                         children: [
                           Container(
-                            width: 48,
-                            height: 48,
+                            width: 44,
+                            height: 44,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF7C4DFF),
-                                  Color(0xFF40C4FF),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: GlassTheme.accentPrimary.withValues(alpha: 0.4),
-                                  blurRadius: 14,
-                                  spreadRadius: -4,
-                                )
-                              ],
+                              color: GlassTheme.accentPrimary,
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Center(
                               child: Text(

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/glass_theme.dart';
 
@@ -38,68 +37,49 @@ class GlassContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sigmaBlur = blur ?? GlassTheme.blurSigma(isDark);
+    final defaultBg = GlassTheme.cardBg(isDark);
 
-    final effectiveFillOpacity =
-        fillOpacity ?? (isDark ? GlassTheme.fillDarkMode : GlassTheme.fillLightMode);
-
-    final Color fill = tintColor != null
-        ? tintColor!.withValues(alpha: effectiveFillOpacity)
-        : Colors.white.withValues(alpha: effectiveFillOpacity);
-
-    final effectiveBorderOpacity =
-        borderOpacity ?? (isDark ? GlassTheme.borderDark : GlassTheme.borderLight);
-
-    final Color border = showBorder
-        ? Colors.white.withValues(alpha: effectiveBorderOpacity)
-        : Colors.transparent;
+    final Color effectiveBg = tintColor != null
+        ? tintColor!.withValues(alpha: fillOpacity ?? (isDark ? 0.22 : 0.14))
+        : (fillOpacity != null
+            ? (isDark
+                ? Colors.white.withValues(alpha: fillOpacity!)
+                : Colors.white.withValues(alpha: fillOpacity!))
+            : defaultBg);
 
     final radius = BorderRadius.circular(borderRadius);
 
-    Widget container = ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: sigmaBlur, sigmaY: sigmaBlur),
-        child: Container(
-          width: width,
-          height: height,
-          padding: padding,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                fill.withValues(alpha: effectiveFillOpacity + 0.15), // Specular Top
-                fill, // Core
-                fill.withValues(alpha: effectiveFillOpacity * 0.4), // Dark refractor volume
-              ],
-              stops: const [0.0, 0.2, 1.0],
-            ),
-            borderRadius: radius,
-            border: showBorder 
-                ? Border.all(
-                    color: Colors.white.withValues(alpha: effectiveBorderOpacity * 0.9), 
-                    width: 1.2)
-                : null,
-          ),
-          child: child,
-        ),
-      ),
-    );
-
-    container = Container(
+    Widget container = AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
       width: width,
       height: height,
       margin: margin,
       decoration: BoxDecoration(
+        color: effectiveBg,
         borderRadius: radius,
+        border: showBorder
+            ? Border.all(
+                color: GlassTheme.borderColor(isDark).withValues(alpha: borderOpacity ?? (isDark ? 0.7 : 0.8)),
+                width: 0.8,
+              )
+            : null,
         boxShadow: shadows ?? GlassTheme.glassShadow(isDark),
       ),
-      child: container,
+      child: ClipRRect(
+        borderRadius: radius,
+        child: padding != null
+            ? Padding(padding: padding!, child: child)
+            : child,
+      ),
     );
 
     if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: container);
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: container,
+      );
     }
 
     return container;

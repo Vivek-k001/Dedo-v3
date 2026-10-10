@@ -40,11 +40,41 @@ void main() async {
   );
 }
 
-class DedoApp extends ConsumerWidget {
+class DedoApp extends ConsumerStatefulWidget {
   const DedoApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DedoApp> createState() => _DedoAppState();
+}
+
+class _DedoAppState extends ConsumerState<DedoApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final brightness =
+          WidgetsBinding.instance.platformDispatcher.platformBrightness;
+      ref.read(themeProvider.notifier).syncWithPlatformBrightness(brightness);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    final brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    ref.read(themeProvider.notifier).syncWithPlatformBrightness(brightness);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
     final profile = HiveService.getProfile();
     final hasProfile = profile != null && profile.username.isNotEmpty;
@@ -55,6 +85,8 @@ class DedoApp extends ConsumerWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
+      themeAnimationDuration: const Duration(milliseconds: 250),
+      themeAnimationCurve: Curves.easeInOut,
       home: hasProfile ? const HomeScreen() : const OnboardingScreen(),
     );
   }

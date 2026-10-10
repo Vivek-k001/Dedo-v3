@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/glass_theme.dart';
 
@@ -168,38 +167,18 @@ class _GlassSwitchState extends State<GlassSwitch> {
                   ),
                 );
               },
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(knobHeight / 2),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(knobHeight / 2),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        width: 1.5,
-                      ),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.8), // Inner glare
-                          Colors.white.withValues(alpha: 0.1),
-                          Colors.white.withValues(alpha: 0.0),
-                          Colors.white.withValues(alpha: 0.4), // Bottom reflection
-                        ],
-                        stops: const [0.0, 0.4, 0.6, 1.0],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 3),
-                        )
-                      ],
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(knobHeight / 2),
+                  color: Colors.white,
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x33000000),
+                      blurRadius: 4,
+                      spreadRadius: 0,
+                      offset: Offset(0, 2),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),

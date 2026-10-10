@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/glass_theme.dart';
 
@@ -55,7 +54,6 @@ class _GlassButtonState extends State<GlassButton>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = widget.color ?? GlassTheme.accentPrimary;
     final radius = BorderRadius.circular(widget.borderRadius);
 
@@ -76,91 +74,48 @@ class _GlassButtonState extends State<GlassButton>
           width: widget.width,
           decoration: BoxDecoration(
             borderRadius: radius,
-            boxShadow: [
+            color: accent,
+            boxShadow: const [
               BoxShadow(
-                color: accent.withValues(alpha: 0.35),
-                blurRadius: 20,
-                spreadRadius: -4,
-                offset: const Offset(0, 6),
+                color: Color(0x1F000000),
+                blurRadius: 6,
+                offset: Offset(0, 2),
               ),
             ],
           ),
           child: ClipRRect(
             borderRadius: radius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Stack(
-                children: [
-                  // Base color layer (Saturating the refraction)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          accent.withValues(alpha: isDark ? 0.65 : 0.85),
-                          accent.withValues(alpha: isDark ? 0.35 : 0.55),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
+              child: Center(
+                child: widget.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.icon != null) ...[
+                            Icon(widget.icon, color: Colors.white, size: 18),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            widget.label,
+                            style: widget.textStyle ??
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: -0.2,
+                                ),
+                          ),
                         ],
                       ),
-                    ),
-                    child: Center(
-                      child: widget.isLoading
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (widget.icon != null) ...[
-                                  Icon(widget.icon, color: Colors.white, size: 18),
-                                  const SizedBox(width: 8),
-                                ],
-                                Text(
-                                  widget.label,
-                                  style: widget.textStyle ??
-                                      const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.3,
-                                      ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                  // Specular Reflection & Refraction Rim Layer
-                  Positioned.fill(
-                    child: IgnorePointer(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: radius,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.35),
-                            width: 1.2,
-                          ),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.white.withValues(alpha: 0.4), // Glare
-                              Colors.white.withValues(alpha: 0.0), // Clear center
-                              Colors.black.withValues(alpha: 0.0), // Clear center
-                              accent.withValues(alpha: 0.4),       // Internal refraction volume bounce
-                            ],
-                            stops: const [0.0, 0.3, 0.7, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ),
           ),

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.todo"
+    namespace = "com.example.dedo"
     compileSdk = flutter.compileSdkVersion
 
     // ✅ Fix NDK mismatch
@@ -25,7 +25,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.todo"
+        applicationId = "com.example.dedo"
 
         // Keep Flutter defaults (safe)
         minSdk = flutter.minSdkVersion

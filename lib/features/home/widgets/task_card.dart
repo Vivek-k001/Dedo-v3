@@ -1,11 +1,16 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/glass_theme.dart';
-import '../../../core/widgets/glass_container.dart';
 import '../../../models/task.dart';
 import '../../../providers/category_provider.dart';
+import '../../../providers/task_provider.dart';
+import 'telegram_context_menu.dart';
 
+/// Telegram iOS 26 style swipe-to-action task card with liquid spring physics,
+/// physical resistance swipe gestures, haptic ticks, long-press preview, and inset rounded geometry.
 class TaskCard extends ConsumerStatefulWidget {
   final Task task;
   final VoidCallback onTap;
@@ -18,29 +23,82 @@ class TaskCard extends ConsumerStatefulWidget {
 
 class _TaskCardState extends ConsumerState<TaskCard>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _fade;
-  late final Animation<Offset> _slide;
+  double _dragOffset = 0.0;
+  bool _hasHapticTicked = false;
+  late final AnimationController _springCtrl;
+  late Animation<double> _springAnim;
+
+  // Thresholds
+  static const double _actionThreshold = 74.0;
+  static const double _maxSwipe = 140.0;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
+    _springCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 360),
     );
-    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    _ctrl.forward();
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _springCtrl.dispose();
     super.dispose();
+  }
+
+  void _onHorizontalDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      // Elastic resistance curve (diminishing returns as you pull further)
+      final rawDelta = details.primaryDelta ?? 0;
+      double newOffset = _dragOffset + rawDelta;
+
+      if (newOffset.abs() > _actionThreshold) {
+        final overflow = newOffset.abs() - _actionThreshold;
+        final dampened = _actionThreshold + (overflow * 0.38); // Physical resistance
+        newOffset = newOffset > 0 ? dampened : -dampened;
+      }
+
+      newOffset = newOffset.clamp(-_maxSwipe, _maxSwipe);
+      _dragOffset = newOffset;
+
+      // Haptic tick precisely as threshold is passed
+      if (_dragOffset.abs() >= _actionThreshold && !_hasHapticTicked) {
+        _hasHapticTicked = true;
+        HapticFeedback.mediumImpact();
+      } else if (_dragOffset.abs() < _actionThreshold && _hasHapticTicked) {
+        _hasHapticTicked = false;
+      }
+    });
+  }
+
+  void _onHorizontalDragEnd(DragEndDetails details) {
+    if (_dragOffset.abs() >= _actionThreshold) {
+      if (_dragOffset > 0) {
+        // Swiped right -> Toggle Complete with haptic
+        HapticFeedback.lightImpact();
+        ref.read(taskProvider.notifier).toggleComplete(widget.task.id);
+      } else {
+        // Swiped left -> Delete with haptic
+        HapticFeedback.heavyImpact();
+        ref.read(taskProvider.notifier).deleteTask(widget.task.id);
+      }
+    }
+
+    _animateBack();
+  }
+
+  void _animateBack() {
+    _hasHapticTicked = false;
+    _springAnim = Tween<double>(begin: _dragOffset, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _springCtrl,
+        curve: Curves.easeOutBack, // Telegram spring rebound
+      ),
+    );
+    _springCtrl.forward(from: 0.0).then((_) {
+      if (mounted) setState(() => _dragOffset = 0.0);
+    });
   }
 
   @override
@@ -52,156 +110,285 @@ class _TaskCardState extends ConsumerState<TaskCard>
         categories.cast().where((c) => c.id == task.categoryId).firstOrNull;
     final catColor =
         category != null ? Color(category.colorValue) : GlassTheme.accentPrimary;
+    final taskColor = Color(task.colorValue);
 
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: GlassContainer(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-            padding: const EdgeInsets.all(16),
-            borderRadius: GlassTheme.radiusMedium,
-            child: Row(
-              children: [
-                // Color accent bar
-                Container(
-                  width: 4,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: catColor,
-                    borderRadius: BorderRadius.circular(2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: catColor.withValues(alpha: 0.5),
-                        blurRadius: 8,
-                        spreadRadius: -2,
-                      )
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+    final cardBg = GlassTheme.cardBg(isDark);
+    final borderColor = GlassTheme.borderColor(isDark);
+
+    // Current horizontal shift
+    final currentOffset = _springCtrl.isAnimating ? _springAnim.value : _dragOffset;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Background Action Buttons (Left = Done, Right = Delete)
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(GlassTheme.radiusMedium),
+              child: Row(
+                children: [
+                  // Swiping right: Done Action
+                  Expanded(
+                    child: Container(
+                      alignment: Alignment.centerLeft,
+                      padding: const EdgeInsets.only(left: 24),
+                      color: GlassTheme.accentSuccess,
+                      child: Row(
                         children: [
-                          Expanded(
-                            child: Text(
-                              task.title,
+                          Icon(
+                            task.isCompleted
+                                ? CupertinoIcons.arrow_uturn_left
+                                : CupertinoIcons.checkmark_circle_fill,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            task.isCompleted ? 'Pending' : 'Done',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Swiping left: Delete Action
+                  Expanded(
+                    child: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 24),
+                      color: GlassTheme.accentDanger,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            CupertinoIcons.trash_fill,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Main Card with Liquid Horizontal Offset & Long-press context menu
+          AnimatedBuilder(
+            animation: _springCtrl,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(currentOffset, 0),
+                child: child,
+              );
+            },
+            child: GestureDetector(
+              onHorizontalDragUpdate: _onHorizontalDragUpdate,
+              onHorizontalDragEnd: _onHorizontalDragEnd,
+              onTap: () {
+                showIosTelegramContextMenu(
+                  context: context,
+                  task: task,
+                  categoryColor: catColor,
+                  categoryName: category?.name,
+                  onToggleComplete: () =>
+                      ref.read(taskProvider.notifier).toggleComplete(task.id),
+                  onEdit: widget.onTap,
+                  onDelete: () =>
+                      ref.read(taskProvider.notifier).deleteTask(task.id),
+                );
+              },
+              onLongPress: () {
+                showIosTelegramContextMenu(
+                  context: context,
+                  task: task,
+                  categoryColor: catColor,
+                  categoryName: category?.name,
+                  onToggleComplete: () =>
+                      ref.read(taskProvider.notifier).toggleComplete(task.id),
+                  onEdit: widget.onTap,
+                  onDelete: () =>
+                      ref.read(taskProvider.notifier).deleteTask(task.id),
+                );
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(GlassTheme.radiusMedium),
+                  border: Border.all(color: borderColor, width: 0.8),
+                  boxShadow: GlassTheme.glassShadow(isDark),
+                ),
+                child: Row(
+                  children: [
+                    // Task Custom Color Accent (Rounded glowing pill)
+                    Container(
+                      width: 3.5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: task.isCompleted
+                            ? taskColor.withValues(alpha: 0.35)
+                            : taskColor,
+                        borderRadius: BorderRadius.circular(2),
+                        boxShadow: task.isCompleted
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: taskColor.withValues(alpha: 0.45),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Interactive Checkbox with Micro-pop
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        ref.read(taskProvider.notifier).toggleComplete(task.id);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutBack,
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: task.isCompleted
+                              ? GlassTheme.accentSuccess
+                              : Colors.transparent,
+                          border: Border.all(
+                            color: task.isCompleted
+                                ? GlassTheme.accentSuccess
+                                : (isDark
+                                    ? const Color(0xFF48484A)
+                                    : const Color(0xFFC7C7CC)),
+                            width: 1.8,
+                          ),
+                        ),
+                        child: task.isCompleted
+                            ? const Icon(
+                                CupertinoIcons.checkmark,
+                                size: 14,
+                                color: Colors.white,
+                              )
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+
+                    // Task Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  task.title,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? (task.isCompleted
+                                            ? const Color(0xFF636366)
+                                            : Colors.white)
+                                        : (task.isCompleted
+                                            ? const Color(0xFF8E8E93)
+                                            : Colors.black),
+                                    decoration: task.isCompleted
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                    letterSpacing: -0.2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (category != null) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: catColor.withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    category.name,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: catColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (task.note != null && task.note!.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              task.note!,
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
                                 color: isDark
-                                    ? Colors.white
-                                    : const Color(0xFF1A0A2E),
-                                decoration: task.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                decorationColor: isDark
-                                    ? Colors.white.withValues(alpha: 0.5)
-                                    : Colors.black.withValues(alpha: 0.4),
+                                    ? const Color(0xFF8E8E93)
+                                    : const Color(0xFF8E8E93),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          _StatusBadge(isCompleted: task.isCompleted),
-                        ],
-                      ),
-                      if (task.note != null && task.note!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          task.note!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.5)
-                                : Colors.black.withValues(alpha: 0.45),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 12,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.45)
-                                : Colors.black.withValues(alpha: 0.4),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${DateFormat('hh:mm a').format(task.startTime)} – ${DateFormat('hh:mm a').format(task.endTime)}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.45)
-                                  : Colors.black.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          const Spacer(),
-                          if (category != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: catColor.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
+                          ],
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.clock,
+                                size: 12,
+                                color: const Color(0xFF8E8E93),
                               ),
-                              child: Text(
-                                category.name,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: catColor,
+                              const SizedBox(width: 4),
+                              Text(
+                                '${DateFormat('hh:mm a').format(task.startTime)} – ${DateFormat('hh:mm a').format(task.endTime)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF8E8E93),
                                 ),
                               ),
-                            ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final bool isCompleted;
-
-  const _StatusBadge({required this.isCompleted});
-
-  @override
-  Widget build(BuildContext context) {
-    final color =
-        isCompleted ? GlassTheme.accentSuccess : GlassTheme.accentWarning;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
-      ),
-      child: Text(
-        isCompleted ? 'Done' : 'Pending',
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
+        ],
       ),
     );
   }

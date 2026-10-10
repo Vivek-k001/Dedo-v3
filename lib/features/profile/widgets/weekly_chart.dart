@@ -114,18 +114,11 @@ class WeeklyChart extends StatelessWidget {
                     barRods: [
                       BarChartRodData(
                         toY: data[i].toDouble(),
-                        width: 20,
+                        width: 18,
                         borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(8),
+                          top: Radius.circular(6),
                         ),
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            GlassTheme.accentPrimary.withValues(alpha: 0.6),
-                            GlassTheme.accentSecondary.withValues(alpha: 0.8),
-                          ],
-                        ),
+                        color: GlassTheme.accentPrimary,
                       ),
                     ],
                   ),
