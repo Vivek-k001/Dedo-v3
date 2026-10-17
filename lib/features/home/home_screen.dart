@@ -6,11 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/glass_theme.dart';
 import '../../core/widgets/glass_background.dart';
 import '../../core/widgets/glass_container.dart';
-import '../../core/widgets/glass_text_field.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/category_provider.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/focus_provider.dart';
+import '../focus/focus_control_center_modal.dart';
 import '../task/create_task_screen.dart';
 import '../category/category_screen.dart';
 import '../profile/profile_screen.dart';
@@ -18,6 +19,8 @@ import 'widgets/date_strip.dart';
 import 'widgets/category_chips.dart';
 import 'widgets/task_card.dart';
 import '../../core/widgets/liquid_glass_nav_bar.dart';
+
+import '../../core/widgets/confetti_overlay.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -31,8 +34,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   int _navIndex = 0;
   DateTime _selectedDate = DateTime.now();
   String? _selectedCategory;
-  final _searchCtrl = TextEditingController();
-  bool _showSearch = false;
+  bool _showConfetti = false;
   late final TabController _tabCtrl;
 
   @override
@@ -43,47 +45,114 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   void dispose() {
-    _searchCtrl.dispose();
     _tabCtrl.dispose();
     super.dispose();
+  }
+
+  void _triggerCelebration() {
+    HapticFeedback.heavyImpact();
+    setState(() => _showConfetti = true);
   }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeProvider);
     final isDark = themeMode == ThemeMode.dark;
+    final categories = ref.watch(categoryProvider);
+
+    Color? ambientColor;
+    if (_selectedCategory != null) {
+      final selectedCat = categories.cast().where((c) => c.id == _selectedCategory).firstOrNull;
+      if (selectedCat != null) ambientColor = Color(selectedCat.colorValue);
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBody: true,
       body: GlassBackground(
-        child: IndexedStack(
-          index: _navIndex,
+        ambientColor: ambientColor,
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            _HomeBody(
-              selectedDate: _selectedDate,
-              selectedCategory: _selectedCategory,
-              showSearch: _showSearch,
-              searchCtrl: _searchCtrl,
-              tabCtrl: _tabCtrl,
-              isDark: isDark,
-              onDateSelected: (d) => setState(() => _selectedDate = d),
-              onCategorySelected: (c) => setState(() => _selectedCategory = c),
-              onSearchToggle: () => setState(() {
-                _showSearch = !_showSearch;
-                if (!_showSearch) _searchCtrl.clear();
-              }),
-              onThemeToggle: () => ref.read(themeProvider.notifier).toggle(),
-              onOpenCategory: () => setState(() => _navIndex = 1),
-              onAddTask: (task) {
-                Navigator.push(
-                  context,
-                  CupertinoPageRoute(builder: (_) => CreateTaskScreen(initialTask: task)),
-                );
-              },
+            IndexedStack(
+              index: _navIndex,
+              children: [
+                _HomeBody(
+                  selectedDate: _selectedDate,
+                  selectedCategory: _selectedCategory,
+                  tabCtrl: _tabCtrl,
+                  isDark: isDark,
+                  onDateSelected: (d) => setState(() => _selectedDate = d),
+                  onCategorySelected: (c) => setState(() => _selectedCategory = c),
+                  onFocusTap: () => FocusControlCenterModal.show(context),
+                  onThemeToggle: () => ref.read(themeProvider.notifier).toggle(),
+                  onOpenCategory: () => setState(() => _navIndex = 1),
+                  onAddTask: (task) {
+                    Navigator.push(
+                      context,
+                      CupertinoPageRoute(builder: (_) => CreateTaskScreen(initialTask: task)),
+                    );
+                  },
+                  onCelebration: _triggerCelebration,
+                ),
+                const CategoryScreen(isRootTab: true),
+                const ProfileScreen(),
+              ],
             ),
-            const CategoryScreen(isRootTab: true),
-            const ProfileScreen(),
+
+            // ─── Linear Backdrop Blur Under & Below Floating Navbar ───
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 120,
+              child: IgnorePointer(
+                child: ClipRect(
+                  child: ShaderMask(
+                    shaderCallback: (bounds) {
+                      return const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black87,
+                          Colors.black,
+                        ],
+                        stops: [0.0, 0.45, 1.0],
+                      ).createShader(bounds);
+                    },
+                    blendMode: BlendMode.dstIn,
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              (isDark ? Colors.black : Colors.white)
+                                  .withValues(alpha: isDark ? 0.35 : 0.45),
+                              (isDark ? Colors.black : Colors.white)
+                                  .withValues(alpha: isDark ? 0.70 : 0.80),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // ─── Confetti Celebration Layer ───
+            if (_showConfetti)
+              ConfettiOverlay(
+                onFinished: () {
+                  if (mounted) setState(() => _showConfetti = false);
+                },
+              ),
           ],
         ),
       ),
@@ -145,30 +214,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 class _HomeBody extends ConsumerStatefulWidget {
   final DateTime selectedDate;
   final String? selectedCategory;
-  final bool showSearch;
-  final TextEditingController searchCtrl;
   final TabController tabCtrl;
   final bool isDark;
   final void Function(DateTime) onDateSelected;
   final void Function(String?) onCategorySelected;
-  final VoidCallback onSearchToggle;
+  final VoidCallback onFocusTap;
   final VoidCallback onThemeToggle;
   final VoidCallback onOpenCategory;
   final void Function(dynamic task) onAddTask;
+  final VoidCallback onCelebration;
 
   const _HomeBody({
     required this.selectedDate,
     required this.selectedCategory,
-    required this.showSearch,
-    required this.searchCtrl,
     required this.tabCtrl,
     required this.isDark,
     required this.onDateSelected,
     required this.onCategorySelected,
-    required this.onSearchToggle,
+    required this.onFocusTap,
     required this.onThemeToggle,
     required this.onOpenCategory,
     required this.onAddTask,
+    required this.onCelebration,
   });
 
   @override
@@ -176,23 +243,33 @@ class _HomeBody extends ConsumerStatefulWidget {
 }
 
 class _HomeBodyState extends ConsumerState<_HomeBody> {
+  String _greeting(String? name) {
+    final hour = DateTime.now().hour;
+    final userName = name ?? 'there';
+    if (hour < 12) {
+      return 'Good morning, $userName ☀️';
+    } else if (hour < 17) {
+      return 'Good afternoon, $userName 🌤️';
+    } else {
+      return 'Good evening, $userName 🌙';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tasks = ref.watch(taskProvider);
     final categories = ref.watch(categoryProvider);
     final profile = ref.watch(profileProvider);
-    final searchQ = widget.searchCtrl.text;
+    final focusState = ref.watch(focusProvider);
 
-    List tasksFiltered = searchQ.isNotEmpty
-        ? ref.read(taskProvider.notifier).search(searchQ)
-        : tasks.where((t) {
-            final dateMatch = t.date.year == widget.selectedDate.year &&
-                t.date.month == widget.selectedDate.month &&
-                t.date.day == widget.selectedDate.day;
-            final catMatch = widget.selectedCategory == null ||
-                t.categoryId == widget.selectedCategory;
-            return dateMatch && catMatch;
-          }).toList();
+    List tasksFiltered = tasks.where((t) {
+      final dateMatch = t.date.year == widget.selectedDate.year &&
+          t.date.month == widget.selectedDate.month &&
+          t.date.day == widget.selectedDate.day;
+      final catMatch = widget.selectedCategory == null ||
+          t.categoryId == widget.selectedCategory;
+      return dateMatch && catMatch;
+    }).toList();
 
     final pending = tasksFiltered.where((t) => !t.isCompleted).toList();
     final completed = tasksFiltered.where((t) => t.isCompleted).toList();
@@ -222,12 +299,13 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                         ),
                       ),
                       Text(
-                        'Hi, ${profile?.username ?? 'there'} 👋',
+                        _greeting(profile?.username),
                         style: TextStyle(
                           fontSize: 13,
+                          fontWeight: FontWeight.w500,
                           color: widget.isDark
-                              ? Colors.white.withValues(alpha: 0.55)
-                              : Colors.black.withValues(alpha: 0.45),
+                              ? Colors.white.withValues(alpha: 0.65)
+                              : Colors.black.withValues(alpha: 0.55),
                         ),
                       ),
                     ],
@@ -240,11 +318,17 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   isDark: widget.isDark,
                 ),
                 const SizedBox(width: 10),
-                // Search toggle
+                // Focus Mode / Squircle Control Center Launcher
                 _TopBarButton(
-                  icon: widget.showSearch ? Icons.search_off_rounded : Icons.search_rounded,
-                  onTap: widget.onSearchToggle,
+                  icon: focusState.isRunning
+                      ? CupertinoIcons.flame_fill
+                      : CupertinoIcons.timer,
+                  onTap: widget.onFocusTap,
                   isDark: widget.isDark,
+                  customColor: focusState.isRunning ? const Color(0xFF0A84FF) : null,
+                  badgeText: focusState.isRunning
+                      ? '${focusState.remainingSeconds ~/ 60}m'
+                      : null,
                 ),
                 const SizedBox(width: 10),
                 // + Create Task
@@ -265,24 +349,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
             ),
           ),
 
-          // ─── Search Bar ──────────────────────────────────────────────────
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-            child: widget.showSearch
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: GlassTextField(
-                      label: 'Search tasks...',
-                      prefixIcon: Icons.search_rounded,
-                      controller: widget.searchCtrl,
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // ─── Date Strip ──────────────────────────────────────────────────
           DateStrip(
@@ -421,12 +488,16 @@ class _TopBarButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool isDark;
   final bool isAccent;
+  final Color? customColor;
+  final String? badgeText;
 
   const _TopBarButton({
     required this.icon,
     required this.onTap,
     required this.isDark,
     this.isAccent = false,
+    this.customColor,
+    this.badgeText,
   });
 
   @override
@@ -437,18 +508,37 @@ class _TopBarButton extends StatelessWidget {
         onTap();
       },
       child: GlassContainer(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         borderRadius: GlassTheme.radiusMedium,
         fillOpacity: isAccent
             ? (isDark ? 0.24 : 0.28)
-            : (isDark ? 0.08 : 0.14),
-        tintColor: isAccent ? GlassTheme.accentPrimary : null,
-        child: Icon(
-          icon,
-          size: 20,
-          color: isAccent
-              ? (isDark ? const Color(0xFF64B5F6) : GlassTheme.accentPrimary)
-              : (isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF1A0A2E)),
+            : (customColor != null ? 0.22 : (isDark ? 0.08 : 0.14)),
+        tintColor: isAccent
+            ? GlassTheme.accentPrimary
+            : customColor,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: customColor ??
+                  (isAccent
+                      ? (isDark ? const Color(0xFF64B5F6) : GlassTheme.accentPrimary)
+                      : (isDark ? Colors.white.withValues(alpha: 0.85) : const Color(0xFF1A0A2E))),
+            ),
+            if (badgeText != null) ...[
+              const SizedBox(width: 4),
+              Text(
+                badgeText!,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: customColor ?? (isDark ? Colors.white : Colors.black87),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

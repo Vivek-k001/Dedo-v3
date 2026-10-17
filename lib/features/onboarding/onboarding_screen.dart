@@ -87,19 +87,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       curve: Curves.easeOutCubic,
     ));
 
-    // 3. Welcome stage animations
+    // 3. Welcome stage animations with sequential staging:
+    // First: Welcome SVG fades and scales in gracefully (0.0 -> 0.50)
+    // Then: User's name smoothly fades in and rises (0.45 -> 1.0)
     _welcomeAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 1800),
     );
     _welcomeFade = CurvedAnimation(
       parent: _welcomeAnimCtrl,
-      curve: Curves.easeOutCubic,
+      curve: const Interval(0.0, 0.52, curve: Curves.easeOutCubic),
     );
-    _welcomeScale = Tween<double>(begin: 0.94, end: 1.0).animate(
+    _welcomeScale = Tween<double>(begin: 0.90, end: 1.0).animate(
       CurvedAnimation(
         parent: _welcomeAnimCtrl,
-        curve: Curves.easeOutCubic,
+        curve: const Interval(0.0, 0.55, curve: Curves.easeOutBack),
       ),
     );
 
@@ -109,7 +111,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         _helloAnimCtrl.forward();
       }
     });
-    _helloTimer = Timer(const Duration(milliseconds: 2700), () {
+    _helloTimer = Timer(const Duration(milliseconds: 2900), () {
       if (mounted) {
         _transitionToInput();
       }
@@ -141,20 +143,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
     if (!mounted) return;
 
-    // Transition to Stage 3 (Welcome $name)
+    // Transition to Stage 3 (Welcome, then $name)
     setState(() {
       _isLoading = false;
       _stage = _OnboardingStage.welcome;
     });
     _welcomeAnimCtrl.forward();
 
-    // Pause to appreciate the crisp Welcome vector and name, then slow transition to home
-    await Future.delayed(const Duration(milliseconds: 2400));
+    // Pause to appreciate the crisp Welcome vector, followed by name reveal, then slow transition to home
+    await Future.delayed(const Duration(milliseconds: 3200));
     if (mounted) {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 1000),
+          transitionDuration: const Duration(milliseconds: 1200),
           pageBuilder: (_, __, ___) => const HomeScreen(),
           transitionsBuilder: (_, anim, __, child) {
             return FadeTransition(
@@ -190,9 +192,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         backgroundColor: Colors.transparent,
         body: SafeArea(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 600),
+            duration: const Duration(milliseconds: 750),
             switchInCurve: Curves.easeInOutCubic,
             switchOutCurve: Curves.easeInOutCubic,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.96, end: 1.0).animate(animation),
+                  child: child,
+                ),
+              );
+            },
             child: _buildCurrentStage(isDark),
           ),
         ),
@@ -438,19 +449,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   Widget _buildWelcomeStage(bool isDark) {
     final textColor = isDark ? Colors.white : const Color(0xFF1A0A2E);
 
+    // Staggered animation for the user's name:
+    // Starts fading and sliding in only after the Welcome vector has settled
+    final nameFade = CurvedAnimation(
+      parent: _welcomeAnimCtrl,
+      curve: const Interval(0.50, 0.95, curve: Curves.easeOutCubic),
+    );
+    final nameSlide = Tween<Offset>(
+      begin: const Offset(0.0, 0.25),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _welcomeAnimCtrl,
+      curve: const Interval(0.50, 0.95, curve: Curves.easeOutBack),
+    ));
+
     return Center(
       key: const ValueKey('welcome_stage'),
-      child: FadeTransition(
-        opacity: _welcomeFade,
-        child: ScaleTransition(
-          scale: _welcomeScale,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 36),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Apple Rainbow Cursive "Welcome" Vector Graphic
-                Container(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 1. Apple Rainbow Cursive "Welcome" Vector Graphic (Appears First)
+            FadeTransition(
+              opacity: _welcomeFade,
+              child: ScaleTransition(
+                scale: _welcomeScale,
+                child: Container(
                   width: 320,
                   height: 120,
                   decoration: BoxDecoration(
@@ -474,11 +499,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                   ),
                 ),
+              ),
+            ),
 
-                const SizedBox(height: 18),
+            const SizedBox(height: 22),
 
-                // User Name Typography in Apple SF / Inter
-                Text(
+            // 2. User Name Typography (Appears sequentially after "Welcome")
+            SlideTransition(
+              position: nameSlide,
+              child: FadeTransition(
+                opacity: nameFade,
+                child: Text(
                   _savedName,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
@@ -488,9 +519,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     color: textColor,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

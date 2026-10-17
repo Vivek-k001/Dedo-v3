@@ -2,8 +2,11 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/glass_theme.dart';
 import '../../../models/task.dart';
+import '../../../providers/focus_provider.dart';
+import '../../focus/focus_control_center_modal.dart';
 
 /// Telegram iOS style context menu & preview with authentic spring dynamics (damping ~0.7).
 void showIosTelegramContextMenu({
@@ -39,7 +42,7 @@ void showIosTelegramContextMenu({
   );
 }
 
-class _TelegramContextMenuOverlay extends StatefulWidget {
+class _TelegramContextMenuOverlay extends ConsumerStatefulWidget {
   final Task task;
   final Color categoryColor;
   final String? categoryName;
@@ -59,12 +62,12 @@ class _TelegramContextMenuOverlay extends StatefulWidget {
   });
 
   @override
-  State<_TelegramContextMenuOverlay> createState() =>
+  ConsumerState<_TelegramContextMenuOverlay> createState() =>
       _TelegramContextMenuOverlayState();
 }
 
 class _TelegramContextMenuOverlayState
-    extends State<_TelegramContextMenuOverlay> {
+    extends ConsumerState<_TelegramContextMenuOverlay> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -144,7 +147,7 @@ class _TelegramContextMenuOverlayState
                                   width: 4,
                                   height: 22,
                                   decoration: BoxDecoration(
-                                    color: widget.categoryColor,
+                                    color: Color(widget.task.colorValue),
                                     borderRadius: BorderRadius.circular(2),
                                   ),
                                 ),
@@ -259,7 +262,27 @@ class _TelegramContextMenuOverlayState
                               indent: 48,
                             ),
                             _TelegramMenuItem(
-                              icon: CupertinoIcons.pencil_circle_fill,
+                              icon: CupertinoIcons.timer_fill,
+                              label: 'Start Focus (15m)',
+                              color: const Color(0xFF0A84FF),
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                Navigator.pop(context);
+                                ref.read(focusProvider.notifier).startFocus(
+                                  task: widget.task,
+                                  minutes: 15,
+                                );
+                                FocusControlCenterModal.show(context);
+                              },
+                            ),
+                            Divider(
+                              height: 0.5,
+                              thickness: 0.5,
+                              color: borderColor,
+                              indent: 48,
+                            ),
+                            _TelegramMenuItem(
+                              icon: Icons.edit_rounded,
                               label: 'Edit Task',
                               color: GlassTheme.accentPrimary,
                               onTap: () {

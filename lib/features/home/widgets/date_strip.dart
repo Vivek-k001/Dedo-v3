@@ -81,7 +81,7 @@ class _DateStripState extends State<DateStrip> {
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 borderRadius: GlassTheme.radiusMedium,
                 fillOpacity: isSelected ? (isDark ? 0.9 : 1.0) : (isDark ? 0.12 : 0.08),
-                tintColor: isSelected ? GlassTheme.accentPrimary : null,
+                tintColor: isSelected ? Theme.of(context).primaryColor : null,
                 shadows: null,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -116,8 +116,8 @@ class _DateStripState extends State<DateStrip> {
                         width: 5,
                         height: 5,
                         margin: const EdgeInsets.only(top: 3),
-                        decoration: const BoxDecoration(
-                          color: GlassTheme.accentPrimary,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
                           shape: BoxShape.circle,
                         ),
                       ),

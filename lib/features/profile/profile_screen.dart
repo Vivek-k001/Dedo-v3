@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../core/theme/glass_theme.dart';
 import '../../core/widgets/glass_container.dart';
-import '../../core/widgets/glass_button.dart';
 import '../../core/widgets/glass_text_field.dart';
 import '../../core/widgets/glass_switch.dart';
+import '../../core/widgets/glass_toast.dart';
 import '../../core/widgets/shimmer_glass.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/profile_provider.dart';
@@ -109,69 +111,117 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_editingName) ...[
-                          GlassTextField(
-                            label: 'Your name',
-                            controller: _nameCtrl
-                              ..text = profile?.username ?? '',
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              GlassButton(
-                                label: 'Save',
-                                onPressed: () async {
-                                  final name = _nameCtrl.text.trim();
-                                  if (name.isNotEmpty) {
-                                    await ref
-                                        .read(profileProvider.notifier)
-                                        .saveProfile(UserProfile(
-                                          username: name,
-                                          joinedAt: profile?.joinedAt,
-                                        ));
-                                    setState(() => _editingName = false);
-                                  }
-                                },
-                              ),
-                              const SizedBox(width: 8),
-                              TextButton(
-                                onPressed: () =>
-                                    setState(() => _editingName = false),
-                                child: Text(
-                                  'Cancel',
-                                  style: TextStyle(
-                                    color: isDark
-                                        ? Colors.white.withValues(alpha: 0.5)
-                                        : Colors.black.withValues(alpha: 0.4),
+                    child: AnimatedSize(
+                      duration: const Duration(milliseconds: 380),
+                      curve: Curves.easeOutBack,
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_editingName) ...[
+                            GlassTextField(
+                              label: 'Your name',
+                              controller: _nameCtrl
+                                ..text = profile?.username ?? '',
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                // Compact fluid Save button
+                                GestureDetector(
+                                  onTap: () async {
+                                    HapticFeedback.mediumImpact();
+                                    final name = _nameCtrl.text.trim();
+                                    if (name.isNotEmpty) {
+                                      await ref
+                                          .read(profileProvider.notifier)
+                                          .saveProfile(UserProfile(
+                                            username: name,
+                                            joinedAt: profile?.joinedAt,
+                                          ));
+                                      setState(() => _editingName = false);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: GlassTheme.accentPrimary,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: GlassTheme.accentPrimary
+                                              .withValues(alpha: 0.35),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Text(
+                                      'Save',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                const SizedBox(width: 8),
+                                // Compact fluid Cancel button
+                                GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    setState(() => _editingName = false);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: (isDark ? Colors.white : Colors.black)
+                                          .withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: (isDark ? Colors.white : Colors.black)
+                                            .withValues(alpha: 0.12),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.6)
+                                            : Colors.black.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            Text(
+                              profile?.username ?? 'Unknown',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white : const Color(0xFF1A0A2E),
                               ),
-                            ],
-                          )
-                        ] else ...[
-                          Text(
-                            profile?.username ?? 'Unknown',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF1A0A2E),
                             ),
-                          ),
                           const SizedBox(height: 4),
-                          Text(
-                            'DEDO User',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? Colors.white.withValues(alpha: 0.5)
-                                  : Colors.black.withValues(alpha: 0.45),
+                            Text(
+                              'DEDO User',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.5)
+                                    : Colors.black.withValues(alpha: 0.45),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                   if (!_editingName)
@@ -320,41 +370,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             GlassContainer(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               borderRadius: GlassTheme.radiusLarge,
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(
-                    isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    color: GlassTheme.accentPrimary,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Dark Mode',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : const Color(0xFF1A0A2E),
-                          ),
+                  Row(
+                    children: [
+                      Icon(
+                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        color: Theme.of(context).primaryColor,
+                        size: 26,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Dark Mode',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+                              ),
+                            ),
+                            Text(
+                              isDark ? 'On' : 'Off',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.5)
+                                    : Colors.black.withValues(alpha: 0.45),
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          isDark ? 'On' : 'Off',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.5)
-                                : Colors.black.withValues(alpha: 0.45),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GlassSwitch(
-                    value: isDark,
-                    onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
+                      ),
+                      GlassSwitch(
+                        value: isDark,
+                        onChanged: (_) => ref.read(themeProvider.notifier).toggle(),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -448,22 +502,49 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _AboutRow(
                           icon: Icons.email_rounded,
                           label: 'Email',
-                          value: 'sdedodedo80@gmail.com',
-                          isDark: isDark),
+                          value: 'vnjsoftworks@gmail.com',
+                          isDark: isDark,
+                          onTap: () {
+                            Clipboard.setData(
+                                const ClipboardData(text: 'vnjsoftworks@gmail.com'));
+                            HapticFeedback.lightImpact();
+                            GlassToast.show(
+                              context,
+                              message: 'Copied vnjsoftworks@gmail.com',
+                              icon: CupertinoIcons.doc_on_doc_fill,
+                              iconColor: const Color(0xFF007AFF),
+                            );
+                          }),
                     ],
                   ),
                 ),
                 Positioned.fill(
                   child: IgnorePointer(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(GlassTheme.radiusLarge),
+                      borderRadius:
+                          BorderRadius.circular(GlassTheme.radiusLarge),
                       child: Shimmer.fromColors(
-                        baseColor: Colors.white.withValues(alpha: 0.0),
-                        highlightColor: isDark 
-                            ? Colors.white.withValues(alpha: 0.2) 
-                            : Colors.white.withValues(alpha: 0.4),
-                        period: const Duration(milliseconds: 3000),
-                        child: Container(color: Colors.white),
+                        baseColor: Colors.transparent,
+                        highlightColor: isDark
+                            ? Colors.white.withValues(alpha: 0.85)
+                            : Colors.white.withValues(alpha: 0.95),
+                        period: const Duration(milliseconds: 2200),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.transparent,
+                                isDark
+                                    ? Colors.white.withValues(alpha: 0.75)
+                                    : Colors.white.withValues(alpha: 0.95),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.15, 0.5, 0.85],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -482,47 +563,61 @@ class _AboutRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isDark;
+  final VoidCallback? onTap;
 
   const _AboutRow({
     required this.icon,
     required this.label,
     required this.value,
     required this.isDark,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: GlassTheme.accentPrimary.withValues(alpha: 0.7),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.6)
-                : Colors.black.withValues(alpha: 0.5),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.7),
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
+          const SizedBox(width: 10),
+          Text(
+            '$label: ',
             style: TextStyle(
               fontSize: 13,
+              fontWeight: FontWeight.w600,
               color: isDark
-                  ? Colors.white.withValues(alpha: 0.8)
-                  : const Color(0xFF1A0A2E),
+                  ? Colors.white.withValues(alpha: 0.6)
+                  : Colors.black.withValues(alpha: 0.5),
             ),
-            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.8)
+                    : const Color(0xFF1A0A2E),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (onTap != null)
+            Icon(
+              CupertinoIcons.doc_on_doc,
+              size: 13,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.4)
+                  : Colors.black.withValues(alpha: 0.35),
+            ),
+        ],
+      ),
     );
   }
 }

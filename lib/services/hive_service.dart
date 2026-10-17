@@ -45,4 +45,8 @@ class HiveService {
   // ─── Settings helpers ─────────────────────────────────────────────────────
   static bool isDarkMode() => settings.get('isDarkMode', defaultValue: false);
   static Future<void> setDarkMode(bool val) => settings.put('isDarkMode', val);
+
+  static int getAccentColor() =>
+      settings.get('accentColor', defaultValue: 0xFF007AFF);
+  static Future<void> setAccentColor(int val) => settings.put('accentColor', val);
 }

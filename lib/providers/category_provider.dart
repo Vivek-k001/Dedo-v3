@@ -36,6 +36,11 @@ class CategoryNotifier extends StateNotifier<List<Category>> {
     _load();
   }
 
+  Future<void> updateCategory(Category cat) async {
+    await HiveService.categories.put(cat.id, cat);
+    _load();
+  }
+
   Future<void> deleteCategory(String id) async {
     await HiveService.categories.delete(id);
     _load();

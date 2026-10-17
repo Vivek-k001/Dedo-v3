@@ -36,6 +36,16 @@ class GlassTheme {
   static const Color accentWarning = Color(0xFFFF9500); // Apple system orange
   static const Color accentDanger = Color(0xFFFF3B30); // Apple system red
 
+  static const List<Color> accentPresets = [
+    Color(0xFF007AFF), // iOS Blue
+    Color(0xFF5856D6), // Electric Indigo
+    Color(0xFFAF52DE), // Royal Violet
+    Color(0xFF34C759), // Emerald
+    Color(0xFFFF9500), // Sunset Amber
+    Color(0xFFFF2D55), // Coral Pink
+    Color(0xFF00C7BE), // Teal
+  ];
+
   // ─── Helpers ──────────────────────────────────────────────────────────────
   static Color cardBg(bool isDark) => isDark ? iosDarkCard : iosLightCard;
 

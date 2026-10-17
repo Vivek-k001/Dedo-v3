@@ -7,6 +7,7 @@ import '../../../core/theme/glass_theme.dart';
 import '../../../models/task.dart';
 import '../../../providers/category_provider.dart';
 import '../../../providers/task_provider.dart';
+import '../../../core/widgets/glass_toast.dart';
 import 'telegram_context_menu.dart';
 
 /// Liquid Glass style swipe-to-action task card with liquid spring physics,
@@ -79,9 +80,21 @@ class _TaskCardState extends ConsumerState<TaskCard>
         HapticFeedback.lightImpact();
         ref.read(taskProvider.notifier).toggleComplete(widget.task.id);
       } else {
-        // Swiped left -> Delete with haptic
+        // Swiped left -> Delete with haptic and top GlassToast Undo option
         HapticFeedback.heavyImpact();
-        ref.read(taskProvider.notifier).deleteTask(widget.task.id);
+        final deletedTask = widget.task;
+        ref.read(taskProvider.notifier).deleteTask(deletedTask.id);
+        GlassToast.show(
+          context,
+          message: 'Deleted "${deletedTask.title}"',
+          icon: CupertinoIcons.trash,
+          iconColor: GlassTheme.accentDanger,
+          actionLabel: 'UNDO',
+          onAction: () {
+            HapticFeedback.mediumImpact();
+            ref.read(taskProvider.notifier).addTask(deletedTask);
+          },
+        );
       }
     }
 
@@ -264,14 +277,18 @@ class _TaskCardState extends ConsumerState<TaskCard>
                     // Interactive Checkbox with Micro-pop
                     GestureDetector(
                       onTap: () {
-                        HapticFeedback.lightImpact();
+                        if (!task.isCompleted) {
+                          HapticFeedback.mediumImpact();
+                        } else {
+                          HapticFeedback.lightImpact();
+                        }
                         ref.read(taskProvider.notifier).toggleComplete(task.id);
                       },
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
+                        duration: const Duration(milliseconds: 240),
                         curve: Curves.easeOutBack,
-                        width: 24,
-                        height: 24,
+                        width: 25,
+                        height: 25,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: task.isCompleted
@@ -286,13 +303,16 @@ class _TaskCardState extends ConsumerState<TaskCard>
                             width: 1.8,
                           ),
                         ),
-                        child: task.isCompleted
-                            ? const Icon(
-                                CupertinoIcons.checkmark,
-                                size: 14,
-                                color: Colors.white,
-                              )
-                            : null,
+                        child: AnimatedScale(
+                          scale: task.isCompleted ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.elasticOut,
+                          child: const Icon(
+                            CupertinoIcons.checkmark,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),

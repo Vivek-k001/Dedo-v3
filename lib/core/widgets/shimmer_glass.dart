@@ -20,10 +20,10 @@ class ShimmerGlass extends StatelessWidget {
 
     final baseColor = isDark
         ? const Color(0xFF2C2C2E)
-        : const Color(0xFFE2E4E8);
+        : const Color(0xFFE5E5EA);
     final highlightColor = isDark
-        ? const Color(0xFF3E3E42)
-        : Colors.white;
+        ? const Color(0xFF8E8E93)
+        : const Color(0xFFFFFFFF);
 
     return Container(
       width: width,
@@ -31,19 +31,19 @@ class ShimmerGlass extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF1C1C1E)
-            : Colors.white.withValues(alpha: 0.85),
+            : Colors.white.withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: isDark
               ? const Color(0xFF38383A)
-              : const Color(0xFFD1D5DB).withValues(alpha: 0.6),
+              : const Color(0xFFD1D5DB).withValues(alpha: 0.8),
           width: 0.8,
         ),
         boxShadow: [
           BoxShadow(
             color: isDark
                 ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.04),
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -54,7 +54,7 @@ class ShimmerGlass extends StatelessWidget {
         child: Shimmer.fromColors(
           baseColor: baseColor,
           highlightColor: highlightColor,
-          period: const Duration(milliseconds: 1300),
+          period: const Duration(milliseconds: 1400),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
