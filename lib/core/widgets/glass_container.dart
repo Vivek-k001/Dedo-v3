@@ -49,9 +49,7 @@ class GlassContainer extends StatelessWidget {
 
     final radius = BorderRadius.circular(borderRadius);
 
-    Widget container = AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeInOut,
+    Widget container = Container(
       width: width,
       height: height,
       margin: margin,

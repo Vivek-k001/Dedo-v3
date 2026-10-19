@@ -29,12 +29,12 @@ class SquircleTickPainter extends CustomPainter {
     // Inset from squircle border
     final inset = 11.0;
 
-    // Second of the current minute (0..59)
-    // When remainingSeconds counts down, elapsed second within the minute runs 0..59
-    final elapsedTotal = (totalSeconds - remainingSeconds).clamp(0, totalSeconds);
-    final currentSecond = elapsedTotal % 60;
+    // Active tick index based on total session progress (0.0 to 1.0)
+    final clampedProgress = progress.clamp(0.0, 1.0);
+    // Number of ticks lit up out of 60 based on full session progress
+    final activeTickIndex = (clampedProgress * (tickCount - 1)).round();
 
-    // 1. Draw 60 Perimeter Dial Ticks (1 Tick per Second)
+    // 1. Draw 60 Perimeter Dial Ticks (proportional to total session duration)
     for (int i = 0; i < tickCount; i++) {
       // Angle starting from top (-pi / 2) going clockwise
       final angle = -math.pi / 2 + (2 * math.pi * i / tickCount);
@@ -50,16 +50,16 @@ class SquircleTickPainter extends CustomPainter {
       final sinPow = math.pow(sinA.abs(), 3.5);
       final dist = math.pow(cosPow / math.pow(rx, 3.5) + sinPow / math.pow(ry, 3.5), -1.0 / 3.5).toDouble();
 
-      // Major markers every 5 seconds (0, 5, 10, 15...)
+      // Major markers every 5 ticks
       final isMajor = i % 5 == 0;
       final tickLength = isMajor ? 7.5 : 4.5;
 
       final outer = Offset(center.dx + cosA * dist, center.dy + sinA * dist);
       final inner = Offset(center.dx + cosA * (dist - tickLength), center.dy + sinA * (dist - tickLength));
 
-      // Active state: lights up up to the exact current second
-      final isActive = i <= currentSecond;
-      final isCurrent = i == currentSecond;
+      // Active state: lit up up to current session progress
+      final isActive = clampedProgress > 0 && i <= activeTickIndex;
+      final isCurrent = i == activeTickIndex && clampedProgress > 0;
 
       final paint = Paint()
         ..color = isCurrent
@@ -75,58 +75,58 @@ class SquircleTickPainter extends CustomPainter {
       canvas.drawLine(inner, outer, paint);
     }
 
-    // 2. HAND 1: Focus Progress Hand (Session / Minute Hand)
-    // Points according to total session progress (0.0 to 1.0) or elapsed minutes
-    final sessionAngle = -math.pi / 2 + (2 * math.pi * progress.clamp(0.0, 1.0));
-    final sessionHandLength = (w / 2) * 0.44;
-
-    final sessionEnd = Offset(
-      center.dx + math.cos(sessionAngle) * sessionHandLength,
-      center.dy + math.sin(sessionAngle) * sessionHandLength,
-    );
-    final sessionTail = Offset(
-      center.dx - math.cos(sessionAngle) * 6.0,
-      center.dy - math.sin(sessionAngle) * 6.0,
-    );
-
-    // Sturdy, elegant session hand
-    final sessionPaint = Paint()
-      ..color = (isDark ? Colors.white : const Color(0xFF1C1C1E)).withValues(alpha: 0.90)
-      ..strokeWidth = 3.2
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(sessionTail, sessionEnd, sessionPaint);
-
-    // 3. HAND 2: Second Hand (1:1 Matched to the 60 ticks)
-    // Points exactly at the active tick of currentSecond!
+    // 2. SMALLER WHITE SECOND NEEDLE: Sweeps every second (0..59)
+    // Elapsed seconds within the current minute
+    final elapsedTotal = (totalSeconds - remainingSeconds).clamp(0, totalSeconds);
+    final currentSecond = elapsedTotal % 60;
     final secondAngle = -math.pi / 2 + (2 * math.pi * currentSecond / 60);
-    final secondHandLength = (w / 2) * 0.65;
+    // Noticeably smaller and slim so the colored main needle is dominant
+    final secondHandLength = (w / 2) * 0.38;
 
     final secondEnd = Offset(
       center.dx + math.cos(secondAngle) * secondHandLength,
       center.dy + math.sin(secondAngle) * secondHandLength,
     );
     final secondTail = Offset(
-      center.dx - math.cos(secondAngle) * 11.0,
-      center.dy - math.sin(secondAngle) * 11.0,
+      center.dx - math.cos(secondAngle) * 5.0,
+      center.dy - math.sin(secondAngle) * 5.0,
     );
 
-    // Vibrant accent colored second hand with counter-balance tail
-    final secondPaint = Paint()
-      ..color = activeColor
-      ..strokeWidth = 1.8
+    final whiteNeedlePaint = Paint()
+      ..color = (isDark ? Colors.white : Colors.black87).withValues(alpha: 0.85)
+      ..strokeWidth = 1.6
       ..strokeCap = StrokeCap.round;
-    canvas.drawLine(secondTail, secondEnd, secondPaint);
+    canvas.drawLine(secondTail, secondEnd, whiteNeedlePaint);
 
-    // 4. Center Pivot Caps (mechanical depth with layered concentric rings)
+    // 3. MAIN COLORED NEEDLE: Represents the total focus session progress (reaches 100% when time is up)
+    final progressAngle = -math.pi / 2 + (2 * math.pi * clampedProgress);
+    final mainHandLength = (w / 2) * 0.65;
+
+    final mainHandEnd = Offset(
+      center.dx + math.cos(progressAngle) * mainHandLength,
+      center.dy + math.sin(progressAngle) * mainHandLength,
+    );
+    final mainHandTail = Offset(
+      center.dx - math.cos(progressAngle) * 9.0,
+      center.dy - math.sin(progressAngle) * 9.0,
+    );
+
+    final coloredNeedlePaint = Paint()
+      ..color = activeColor
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(mainHandTail, mainHandEnd, coloredNeedlePaint);
+
+    // 4. Center Pivot Cap (layers both needles cleanly)
     final outerPivot = Paint()
       ..color = activeColor
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 4.5, outerPivot);
+    canvas.drawCircle(center, 4.2, outerPivot);
 
     final innerPivot = Paint()
-      ..color = isDark ? const Color(0xFF121214) : Colors.white
+      ..color = isDark ? const Color(0xFF1C1C1E) : Colors.white
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 2.0, innerPivot);
+    canvas.drawCircle(center, 1.8, innerPivot);
   }
 
   @override

@@ -300,9 +300,7 @@ class _LiquidGlassNavBarState extends State<LiquidGlassNavBar>
                 children: [
                   // ─── 1. Outer Translucent Glass Bar ──────────────────────────────
                   Positioned.fill(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOut,
+                    child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(31),
                         boxShadow: [
@@ -326,9 +324,7 @@ class _LiquidGlassNavBarState extends State<LiquidGlassNavBar>
                         borderRadius: BorderRadius.circular(31),
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeInOut,
+                          child: Container(
                             decoration: BoxDecoration(
                               color: outerBg,
                               borderRadius: BorderRadius.circular(31),

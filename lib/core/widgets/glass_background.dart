@@ -14,9 +14,7 @@ class GlassBackground extends StatelessWidget {
     final bg = GlassTheme.scaffoldBg(isDark);
     final glow = ambientColor ?? Theme.of(context).primaryColor;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOut,
+    return Container(
       color: bg,
       child: Stack(
         fit: StackFit.expand,
@@ -28,9 +26,7 @@ class GlassBackground extends StatelessWidget {
             width: 320,
             height: 320,
             child: IgnorePointer(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 450),
-                curve: Curves.easeInOut,
+              child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
@@ -50,9 +46,7 @@ class GlassBackground extends StatelessWidget {
             width: 300,
             height: 300,
             child: IgnorePointer(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 450),
-                curve: Curves.easeInOut,
+              child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(

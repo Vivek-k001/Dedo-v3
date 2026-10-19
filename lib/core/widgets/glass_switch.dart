@@ -111,13 +111,15 @@ class _GlassSwitchState extends State<GlassSwitch> {
         }
       },
       child: SizedBox(
-        width: trackWidth + 8,
+        width: trackWidth + 24,
         height: 38,
         child: Stack(
+          clipBehavior: Clip.none,
           alignment: Alignment.centerLeft,
           children: [
-            // Track Layer
-            Center(
+            // Track Layer (12px inset to accommodate spring bounce on both sides)
+            Positioned(
+              left: 12,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOutCubic,
@@ -136,50 +138,58 @@ class _GlassSwitchState extends State<GlassSwitch> {
                 ),
               ),
             ),
-            // Sub-frame Tweener for Flawless Liquid Physics
+            // Sub-frame Tweener for Flawless Liquid Physics with Volume Preservation
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: targetProgress, end: targetProgress),
-              duration: Duration(milliseconds: _isDragging ? 0 : 500),
-              curve: _isDragging ? Curves.linear : Curves.elasticOut,
+              duration: Duration(milliseconds: _isDragging ? 0 : 540),
+              curve: _isDragging ? Curves.linear : const _LiquidElasticCurve(),
               builder: (context, progress, child) {
                 
-                // Map progress to absolute left offset
+                // Map progress to absolute left offset within the track coordinate space
                 final double currentLeftLoc = minLeft + (progress * (maxLeft - minLeft));
                 
-                // LIQUID STRETCH PHYSICS
-                // The squircle blob elongates as it reaches the center (progress = 0.5)
-                // Squished perfectly back into stable size (squishes) when reaching ends (progress 0.0 or 1.0)
+                // AUTHENTIC LIQUID FLUID DYNAMICS (Volume Preservation):
+                // In fluid physics, as an elastic droplet stretches horizontally (dx),
+                // it naturally pinches vertically (dy) to conserve volume, creating that iconic jiggle!
                 final double distanceToCenter = (progress - 0.5).abs();
-                final double stretchIntensity = 1.0 - (distanceToCenter / 0.5); // 1.0 at center, 0.0 at edges
+                final double stretchIntensity = (1.0 - (distanceToCenter / 0.5)).clamp(0.0, 1.0);
                 
-                double dynamicWidth = baseKnobWidth + (stretchIntensity * 16.0); // Expands up to +16px in middle
+                // Velocity-based elongation (up to +20px in mid-transit)
+                double dynamicWidth = baseKnobWidth + (stretchIntensity * 20.0);
+                
+                // Volume preservation pinch: height narrows by up to 3.5px during peak velocity
+                double dynamicHeight = knobHeight - (stretchIntensity * 3.5);
+
+                // Fluid overshoot squish at impact endpoints
+                if (progress < 0.0) {
+                  // Overshot left: squashes against left wall (wider, shorter)
+                  final leftOvershoot = (-progress).clamp(0.0, 0.4);
+                  dynamicWidth += leftOvershoot * 18.0;
+                  dynamicHeight -= leftOvershoot * 3.0;
+                } else if (progress > 1.0) {
+                  // Overshot right: squashes against right wall
+                  final rightOvershoot = (progress - 1.0).clamp(0.0, 0.4);
+                  dynamicWidth += rightOvershoot * 18.0;
+                  dynamicHeight -= rightOvershoot * 3.0;
+                }
                 
                 if (_isPressed && !_isDragging && stretchIntensity < 0.1) {
-                  dynamicWidth += 4.0; // slight pressure squish from finger press at rest edges
+                  dynamicWidth += 5.0; // tactile fingertip pressure spread
+                  dynamicHeight -= 1.5;
                 }
 
                 return Positioned(
-                  left: currentLeftLoc + 4, // factoring in tracking padding
+                  left: 12 + currentLeftLoc, // +12 matches track's left inset
                   child: SizedBox(
                     width: dynamicWidth,
-                    height: knobHeight,
+                    height: dynamicHeight,
                     child: child,
                   ),
                 );
               },
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(knobHeight / 2),
-                  color: Colors.white,
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 4,
-                      spreadRadius: 0,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
+              child: _LiquidGlassKnob(
+                isDark: isDark,
+                radius: knobHeight / 2,
               ),
             ),
           ],
@@ -188,3 +198,139 @@ class _GlassSwitchState extends State<GlassSwitch> {
     );
   }
 }
+
+/// Authentic Liquid Glass specular knob matching the navbar sliding pill.
+/// Features backdrop blur, top/bottom specular crescent reflections, and physical depth.
+class _LiquidGlassKnob extends StatelessWidget {
+  final bool isDark;
+  final double radius;
+
+  const _LiquidGlassKnob({
+    required this.isDark,
+    required this.radius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final lensRadius = BorderRadius.circular(radius);
+
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: lensRadius,
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.38)
+                  : Colors.black.withValues(alpha: 0.10),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.20)
+                  : Colors.black.withValues(alpha: 0.04),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: lensRadius,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: lensRadius,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: isDark
+                        ? [
+                            Colors.white.withValues(alpha: 0.22),
+                            Colors.white.withValues(alpha: 0.06),
+                            Colors.black.withValues(alpha: 0.20),
+                          ]
+                        : [
+                            Colors.white.withValues(alpha: 0.88),
+                            Colors.white.withValues(alpha: 0.48),
+                            Colors.white.withValues(alpha: 0.28),
+                          ],
+                    stops: const [0.0, 0.45, 1.0],
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 1.0,
+                left: 6.0,
+                right: 6.0,
+                height: 2.0,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.0),
+                        Colors.white.withValues(alpha: isDark ? 0.85 : 0.98),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 1.0,
+                left: 8.0,
+                right: 8.0,
+                height: 1.6,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.0),
+                        Colors.white.withValues(alpha: isDark ? 0.40 : 0.60),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.5, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: lensRadius,
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.45)
+                        : Colors.white.withValues(alpha: 0.85),
+                    width: 0.85,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Authentic Apple iOS Fluid Jelly/Liquid Spring Curve.
+/// Simulates high-velocity overshoot followed by two micro-jiggles before rest.
+class _LiquidElasticCurve extends Curve {
+  const _LiquidElasticCurve();
+
+  @override
+  double transformInternal(double t) {
+    if (t == 0.0 || t == 1.0) return t;
+    final decay = -10.0 * t;
+    // Smooth initial surge into a bouncy jelly rebound
+    return (1.0 + (decay < -20 ? 0.0 : (3.1415926535 * 0.16 * (1.0 - t) * (1.0 - t))) *
+            (t < 0.6 ? 1.0 : (1.0 - t) / 0.4)) *
+        Curves.elasticOut.transform(t);
+  }
+}
+

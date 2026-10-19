@@ -20,7 +20,8 @@ import 'widgets/category_chips.dart';
 import 'widgets/task_card.dart';
 import '../../core/widgets/liquid_glass_nav_bar.dart';
 
-import '../../core/widgets/confetti_overlay.dart';
+import '../../services/hive_service.dart';
+import '../profile/widgets/birthday_celebration_modal.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -34,24 +35,50 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   int _navIndex = 0;
   DateTime _selectedDate = DateTime.now();
   String? _selectedCategory;
-  bool _showConfetti = false;
   late final TabController _tabCtrl;
+  final GlobalKey<DateStripState> _dateStripKey = GlobalKey<DateStripState>();
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkBirthdayCelebration();
+    });
+  }
+
+  void _resetToToday() {
+    HapticFeedback.selectionClick();
+    setState(() => _selectedDate = DateTime.now());
+    _dateStripKey.currentState?.scrollToToday();
+  }
+
+  void _checkBirthdayCelebration() {
+    final profile = ref.read(profileProvider);
+    if (profile?.birthday == null) return;
+
+    final now = DateTime.now();
+    final bday = profile!.birthday!;
+    final isBirthdayToday = (now.month == bday.month && now.day == bday.day);
+
+    if (isBirthdayToday) {
+      final lastYearCelebrated =
+          HiveService.settings.get('lastBirthdayYearCelebrated', defaultValue: 0);
+      if (lastYearCelebrated != now.year) {
+        HiveService.settings.put('lastBirthdayYearCelebrated', now.year);
+        BirthdayCelebrationModal.show(
+          context,
+          userName: profile.username,
+          birthday: profile.birthday,
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
     _tabCtrl.dispose();
     super.dispose();
-  }
-
-  void _triggerCelebration() {
-    HapticFeedback.heavyImpact();
-    setState(() => _showConfetti = true);
   }
 
   @override
@@ -93,7 +120,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       CupertinoPageRoute(builder: (_) => CreateTaskScreen(initialTask: task)),
                     );
                   },
-                  onCelebration: _triggerCelebration,
+                  dateStripKey: _dateStripKey,
+                  onResetToToday: _resetToToday,
                 ),
                 const CategoryScreen(isRootTab: true),
                 const ProfileScreen(),
@@ -145,14 +173,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 ),
               ),
             ),
-
-            // ─── Confetti Celebration Layer ───
-            if (_showConfetti)
-              ConfettiOverlay(
-                onFinished: () {
-                  if (mounted) setState(() => _showConfetti = false);
-                },
-              ),
           ],
         ),
       ),
@@ -189,7 +209,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       bottomNavigationBar: LiquidGlassNavBar(
         isDark: isDark,
         currentIndex: _navIndex,
-        onTap: (i) => setState(() => _navIndex = i),
+        onTap: (i) {
+          if (i == 0 && _navIndex == 0) {
+            _resetToToday();
+          } else if (i == 0) {
+            _resetToToday();
+          }
+          setState(() => _navIndex = i);
+        },
         items: const [
           LiquidNavItem(
             icon: CupertinoIcons.home,
@@ -222,7 +249,8 @@ class _HomeBody extends ConsumerStatefulWidget {
   final VoidCallback onThemeToggle;
   final VoidCallback onOpenCategory;
   final void Function(dynamic task) onAddTask;
-  final VoidCallback onCelebration;
+  final GlobalKey<DateStripState>? dateStripKey;
+  final VoidCallback onResetToToday;
 
   const _HomeBody({
     required this.selectedDate,
@@ -235,7 +263,8 @@ class _HomeBody extends ConsumerStatefulWidget {
     required this.onThemeToggle,
     required this.onOpenCategory,
     required this.onAddTask,
-    required this.onCelebration,
+    this.dateStripKey,
+    required this.onResetToToday,
   });
 
   @override
@@ -262,6 +291,14 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
     final profile = ref.watch(profileProvider);
     final focusState = ref.watch(focusProvider);
 
+    // Compute task counts per date ('yyyy-MM-dd')
+    final taskCountMap = <String, int>{};
+    for (final t in tasks) {
+      final key =
+          '${t.date.year}-${t.date.month.toString().padLeft(2, '0')}-${t.date.day.toString().padLeft(2, '0')}';
+      taskCountMap[key] = (taskCountMap[key] ?? 0) + 1;
+    }
+
     List tasksFiltered = tasks.where((t) {
       final dateMatch = t.date.year == widget.selectedDate.year &&
           t.date.month == widget.selectedDate.month &&
@@ -284,31 +321,35 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
             child: Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'DEDO',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: widget.isDark
-                              ? Colors.white
-                              : const Color(0xFF1A0A2E),
-                          letterSpacing: -0.5,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.onResetToToday,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'DEDO',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: widget.isDark
+                                ? Colors.white
+                                : const Color(0xFF1A0A2E),
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _greeting(profile?.username),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: widget.isDark
-                              ? Colors.white.withValues(alpha: 0.65)
-                              : Colors.black.withValues(alpha: 0.55),
+                        Text(
+                          _greeting(profile?.username),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: widget.isDark
+                                ? Colors.white.withValues(alpha: 0.65)
+                                : Colors.black.withValues(alpha: 0.55),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 // Theme toggle
@@ -353,8 +394,10 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
 
           // ─── Date Strip ──────────────────────────────────────────────────
           DateStrip(
+            key: widget.dateStripKey,
             selectedDate: widget.selectedDate,
             onDateSelected: widget.onDateSelected,
+            taskCountMap: taskCountMap,
           ),
 
           const SizedBox(height: 16),

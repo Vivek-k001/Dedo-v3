@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,7 @@ import '../../providers/theme_provider.dart';
 import '../../models/user_profile.dart';
 import 'widgets/stat_card.dart';
 import 'widgets/weekly_chart.dart';
+import 'widgets/update_settings_tile.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -43,6 +45,97 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
+  void _editBirthday(BuildContext context, UserProfile? profile, bool isDark) {
+    HapticFeedback.lightImpact();
+    DateTime tempDate = profile?.birthday ?? DateTime(2000, 1, 1);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              height: 310,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1C1C1E).withValues(alpha: 0.95)
+                    : const Color(0xFFF2F2F7).withValues(alpha: 0.95),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () => Navigator.pop(modalCtx),
+                          child: const Text('Cancel'),
+                        ),
+                        Text(
+                          'DOB',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () async {
+                            HapticFeedback.selectionClick();
+                            await ref.read(profileProvider.notifier).saveProfile(
+                                  UserProfile(
+                                    username: profile?.username ?? 'Dedo User',
+                                    joinedAt: profile?.joinedAt,
+                                    birthday: tempDate,
+                                  ),
+                                );
+                            if (modalCtx.mounted) Navigator.pop(modalCtx);
+                          },
+                          child: const Text(
+                            'Save',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      initialDateTime: tempDate,
+                      maximumDate: DateTime.now(),
+                      minimumYear: 1940,
+                      maximumYear: DateTime.now().year,
+                      onDateTimeChanged: (newDate) {
+                        tempDate = newDate;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -53,6 +146,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final completed = allTasks.where((t) => t.isCompleted).length;
     final streak = taskNotifier.streak;
     final weekly = taskNotifier.weeklyCompletions();
+
+    final now = DateTime.now();
+    final isBirthdayToday = profile?.birthday != null &&
+        profile!.birthday!.month == now.month &&
+        profile.birthday!.day == now.day;
 
     if (_loading) {
       return SafeArea(
@@ -88,26 +186,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               borderRadius: GlassTheme.radiusLarge,
               child: Row(
                 children: [
-                  // Avatar
-                  Container(
-                    width: 68,
-                    height: 68,
-                    decoration: const BoxDecoration(
-                      color: GlassTheme.accentPrimary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        (profile?.username.isNotEmpty == true)
-                            ? profile!.username[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                  // Avatar with Birthday Cake Badge
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 68,
+                        height: 68,
+                        decoration: const BoxDecoration(
+                          color: GlassTheme.accentPrimary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            (profile?.username.isNotEmpty == true)
+                                ? profile!.username[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      if (isBirthdayToday)
+                        Positioned(
+                          right: -4,
+                          bottom: -4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFF2D55).withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Text(
+                              '🎂',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -138,6 +264,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           .saveProfile(UserProfile(
                                             username: name,
                                             joinedAt: profile?.joinedAt,
+                                            birthday: profile?.birthday,
                                           ));
                                       setState(() => _editingName = false);
                                     }
@@ -410,9 +537,72 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                   ),
+                  const Divider(height: 24),
+                  // DOB Settings Row
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _editBirthday(context, profile, isDark),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.calendar,
+                          color: Color(0xFF007AFF),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'DOB',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+                                ),
+                              ),
+                              Text(
+                                profile?.birthday != null
+                                    ? '${profile!.birthday!.day.toString().padLeft(2, '0')} / ${profile.birthday!.month.toString().padLeft(2, '0')} / ${profile.birthday!.year}'
+                                    : 'Not set (Tap to set)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.5)
+                                      : Colors.black.withValues(alpha: 0.45),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          CupertinoIcons.chevron_right,
+                          size: 16,
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.3)
+                              : Colors.black.withValues(alpha: 0.25),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
+
+            const SizedBox(height: 24),
+
+            // ─── App Updates ──────────────────────────────────────────────
+            Text(
+              'App Updates',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF1A0A2E),
+              ),
+            ),
+            const SizedBox(height: 12),
+            UpdateSettingsTile(isDark: isDark),
 
             const SizedBox(height: 24),
 
@@ -436,22 +626,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: GlassTheme.accentPrimary,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'D',
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              isDark
+                                  ? 'assets/icons/app_icon_light.png'
+                                  : 'assets/icons/app_icon_dark.png',
+                              width: 44,
+                              height: 44,
+                              fit: BoxFit.cover,
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -483,7 +666,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'A simple and powerful task management app designed for productivity.',
+                        'A simple and minimal task manager made for your daily focus.',
                         style: TextStyle(
                           fontSize: 13,
                           height: 1.5,

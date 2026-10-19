@@ -104,8 +104,7 @@ class _DedoAppState extends ConsumerState<DedoApp> with WidgetsBindingObserver {
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: themeMode,
-        themeAnimationDuration: const Duration(milliseconds: 250),
-        themeAnimationCurve: Curves.easeInOut,
+        themeAnimationDuration: Duration.zero,
         home: hasProfile ? const HomeScreen() : const OnboardingScreen(),
       ),
     );

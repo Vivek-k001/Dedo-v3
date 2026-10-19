@@ -10,5 +10,12 @@ class UserProfile extends HiveObject {
   @HiveField(1)
   DateTime? joinedAt;
 
-  UserProfile({required this.username, this.joinedAt});
+  @HiveField(2)
+  DateTime? birthday;
+
+  UserProfile({
+    required this.username,
+    this.joinedAt,
+    this.birthday,
+  });
 }

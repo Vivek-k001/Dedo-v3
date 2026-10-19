@@ -16,17 +16,20 @@ class UserProfileAdapter extends TypeAdapter<UserProfile> {
     return UserProfile(
       username: fields[0] as String,
       joinedAt: fields[1] as DateTime?,
+      birthday: fields[2] as DateTime?,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserProfile obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.username)
       ..writeByte(1)
-      ..write(obj.joinedAt);
+      ..write(obj.joinedAt)
+      ..writeByte(2)
+      ..write(obj.birthday);
   }
 
   @override

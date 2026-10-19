@@ -13,59 +13,17 @@ class TaskNotifier extends StateNotifier<List<Task>> {
   }
 
   void _load() {
-    _ensureWeeklySampleData();
-    state = HiveService.tasks.values.toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-  }
-
-  void _ensureWeeklySampleData() {
-    final alreadySeeded =
-        HiveService.settings.get('hasSeededWeeklyRainbow', defaultValue: false);
-    if (alreadySeeded) return;
-
-    final now = DateTime.now();
-    final monday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
-
-    final sampleTitles = [
-      'Morning Reflection & Planning',
-      'Team Design Sync',
-      'Code Architecture Review',
-      'Workout & Cardio Session',
-      'Feature Sprint Wrap-up',
-      'Reading & Knowledge Catch-up',
-      'Weekly Goal Setting',
-    ];
-
-    final sampleColors = [
-      0xFFFF5A52, // Mon
-      0xFFFF9500, // Tue
-      0xFFFFCC00, // Wed
-      0xFF34C759, // Thu
-      0xFF30B0C7, // Fri
-      0xFF007AFF, // Sat
-      0xFFAF52DE, // Sun
-    ];
-
+    // Purge any previously seeded sample tasks if present
     for (int i = 0; i < 7; i++) {
-      final taskDate = monday.add(Duration(days: i, hours: 10));
-      final taskId = 'sample_week_day_$i';
-      if (!HiveService.tasks.containsKey(taskId)) {
-        final task = Task(
-          id: taskId,
-          title: sampleTitles[i],
-          note: 'Completed weekly milestone',
-          date: taskDate,
-          startTime: taskDate,
-          endTime: taskDate.add(const Duration(hours: 1)),
-          colorValue: sampleColors[i],
-          isCompleted: true,
-          createdAt: taskDate,
-        );
-        HiveService.tasks.put(taskId, task);
+      final sampleId = 'sample_week_day_$i';
+      if (HiveService.tasks.containsKey(sampleId)) {
+        HiveService.tasks.delete(sampleId);
       }
     }
-    HiveService.settings.put('hasSeededWeeklyRainbow', true);
+    HiveService.settings.delete('hasSeededWeeklyRainbow');
+
+    state = HiveService.tasks.values.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   Future<void> addTask(Task task) async {

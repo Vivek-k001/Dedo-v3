@@ -12,6 +12,7 @@ import '../../models/task.dart';
 import '../../models/category.dart';
 import '../../providers/task_provider.dart';
 import '../../providers/category_provider.dart';
+import '../../core/widgets/ios_glass_pickers.dart';
 
 class CreateTaskScreen extends ConsumerStatefulWidget {
   final Task? initialTask;
@@ -71,40 +72,24 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await IOSGlassPickers.showDatePicker(
+      context,
       initialDate: _date,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: GlassTheme.accentPrimary,
-            brightness: Theme.of(context).brightness,
-          ),
-        ),
-        child: child!,
-      ),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
+      title: 'Select Date',
     );
     if (picked != null) setState(() => _date = picked);
   }
 
   Future<void> _pickTime(bool isStart) async {
-    final picked = await showTimePicker(
-      context: context,
+    final picked = await IOSGlassPickers.showTimePicker(
+      context,
       initialTime: TimeOfDay.fromDateTime(isStart ? _startTime : _endTime),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: GlassTheme.accentPrimary,
-            brightness: Theme.of(context).brightness,
-          ),
-        ),
-        child: child!,
-      ),
+      title: isStart ? 'Start Time' : 'End Time',
     );
     if (picked != null) {
-      final base = DateTime.now();
+      final base = _date;
       final dt =
           DateTime(base.year, base.month, base.day, picked.hour, picked.minute);
       setState(() {
@@ -178,16 +163,20 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
     final isEdit = widget.initialTask != null;
 
     return GlassBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   // ─── Header ─────────────────────────────────────────────
                   Row(
                     children: [
@@ -433,6 +422,7 @@ class _CreateTaskScreenState extends ConsumerState<CreateTaskScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -15,8 +15,14 @@ import 'telegram_context_menu.dart';
 class TaskCard extends ConsumerStatefulWidget {
   final Task task;
   final VoidCallback onTap;
+  final VoidCallback? onCelebration;
 
-  const TaskCard({super.key, required this.task, required this.onTap});
+  const TaskCard({
+    super.key,
+    required this.task,
+    required this.onTap,
+    this.onCelebration,
+  });
 
   @override
   ConsumerState<TaskCard> createState() => _TaskCardState();
@@ -26,6 +32,7 @@ class _TaskCardState extends ConsumerState<TaskCard>
     with SingleTickerProviderStateMixin {
   double _dragOffset = 0.0;
   bool _hasHapticTicked = false;
+  bool _isCheckboxPressed = false;
   late final AnimationController _springCtrl;
   late Animation<double> _springAnim;
 
@@ -76,9 +83,28 @@ class _TaskCardState extends ConsumerState<TaskCard>
   void _onHorizontalDragEnd(DragEndDetails details) {
     if (_dragOffset.abs() >= _actionThreshold) {
       if (_dragOffset > 0) {
-        // Swiped right -> Toggle Complete with haptic
-        HapticFeedback.lightImpact();
-        ref.read(taskProvider.notifier).toggleComplete(widget.task.id);
+        // Swiped right -> Toggle Complete with celebration & iOS Dynamic Island feedback
+        final task = widget.task;
+        final willComplete = !task.isCompleted;
+
+        if (willComplete) {
+          HapticFeedback.mediumImpact();
+          widget.onCelebration?.call();
+          GlassToast.show(
+            context,
+            message: 'Completed "${task.title}"',
+            icon: CupertinoIcons.checkmark_seal_fill,
+            iconColor: GlassTheme.accentSuccess,
+            actionLabel: 'UNDO',
+            onAction: () {
+              HapticFeedback.lightImpact();
+              ref.read(taskProvider.notifier).toggleComplete(task.id);
+            },
+          );
+        } else {
+          HapticFeedback.lightImpact();
+        }
+        ref.read(taskProvider.notifier).toggleComplete(task.id);
       } else {
         // Swiped left -> Delete with haptic and top GlassToast Undo option
         HapticFeedback.heavyImpact();
@@ -240,9 +266,7 @@ class _TaskCardState extends ConsumerState<TaskCard>
                       ref.read(taskProvider.notifier).deleteTask(task.id),
                 );
               },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
+              child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
                   color: cardBg,
@@ -274,43 +298,75 @@ class _TaskCardState extends ConsumerState<TaskCard>
                     ),
                     const SizedBox(width: 12),
 
-                    // Interactive Checkbox with Micro-pop
+                    // Interactive Checkbox with Immediate Touch Haptic & Micro-pop
                     GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (_) {
+                        HapticFeedback.lightImpact();
+                        setState(() => _isCheckboxPressed = true);
+                      },
+                      onTapUp: (_) {
+                        setState(() => _isCheckboxPressed = false);
+                      },
+                      onTapCancel: () {
+                        setState(() => _isCheckboxPressed = false);
+                      },
                       onTap: () {
-                        if (!task.isCompleted) {
+                        final willComplete = !task.isCompleted;
+                        if (willComplete) {
                           HapticFeedback.mediumImpact();
+                          widget.onCelebration?.call();
+                          GlassToast.show(
+                            context,
+                            message: 'Completed "${task.title}"',
+                            icon: CupertinoIcons.checkmark_seal_fill,
+                            iconColor: GlassTheme.accentSuccess,
+                            actionLabel: 'UNDO',
+                            onAction: () {
+                              HapticFeedback.lightImpact();
+                              ref.read(taskProvider.notifier).toggleComplete(task.id);
+                            },
+                          );
                         } else {
                           HapticFeedback.lightImpact();
                         }
                         ref.read(taskProvider.notifier).toggleComplete(task.id);
                       },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 240),
-                        curve: Curves.easeOutBack,
-                        width: 25,
-                        height: 25,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: task.isCompleted
-                              ? GlassTheme.accentSuccess
-                              : Colors.transparent,
-                          border: Border.all(
-                            color: task.isCompleted
-                                ? GlassTheme.accentSuccess
-                                : (isDark
-                                    ? const Color(0xFF48484A)
-                                    : const Color(0xFFC7C7CC)),
-                            width: 1.8,
-                          ),
-                        ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                         child: AnimatedScale(
-                          scale: task.isCompleted ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 220),
-                          curve: Curves.elasticOut,
-                          child: const Icon(
-                            CupertinoIcons.checkmark,
-                            size: 14,
-                            color: Colors.white,
+                          scale: _isCheckboxPressed ? 0.85 : 1.0,
+                          duration: const Duration(milliseconds: 140),
+                          curve: Curves.easeOutCubic,
+                          child: Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: task.isCompleted
+                                  ? GlassTheme.accentSuccess
+                                  : (_isCheckboxPressed
+                                      ? GlassTheme.accentSuccess.withValues(alpha: 0.20)
+                                      : Colors.transparent),
+                              border: Border.all(
+                                color: (task.isCompleted || _isCheckboxPressed)
+                                    ? GlassTheme.accentSuccess
+                                    : (isDark
+                                        ? const Color(0xFF545458)
+                                        : const Color(0xFFB0B0B6)),
+                                width: 2.0,
+                              ),
+                            ),
+                            child: AnimatedScale(
+                              scale: task.isCompleted ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 220),
+                              curve: Curves.elasticOut,
+                              child: const Icon(
+                                CupertinoIcons.checkmark,
+                                size: 15,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ),
                       ),

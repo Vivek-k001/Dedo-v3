@@ -15,6 +15,7 @@ import '../home/home_screen.dart';
 enum _OnboardingStage {
   hello,
   input,
+  birthday,
   welcome,
 }
 
@@ -31,6 +32,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   final _nameCtrl = TextEditingController();
   final _focusNode = FocusNode();
   String _savedName = '';
+  DateTime? _selectedBirthday;
   bool _isLoading = false;
 
   // Animation controllers
@@ -123,27 +125,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     _inputAnimCtrl.forward();
   }
 
-  Future<void> _submitName() async {
+  void _transitionToBirthday() {
     final name = _nameCtrl.text.trim();
     if (name.isEmpty) {
       HapticFeedback.heavyImpact();
       return;
     }
-
     HapticFeedback.mediumImpact();
     setState(() {
-      _isLoading = true;
       _savedName = name;
+      _stage = _OnboardingStage.birthday;
     });
+  }
 
-    // Save profile to Hive
-    await ref
-        .read(profileProvider.notifier)
-        .saveProfile(UserProfile(username: name, joinedAt: DateTime.now()));
+  Future<void> _finishOnboarding() async {
+    HapticFeedback.mediumImpact();
+    setState(() => _isLoading = true);
+
+    // Save profile with username and birthday to Hive
+    await ref.read(profileProvider.notifier).saveProfile(UserProfile(
+          username: _savedName,
+          joinedAt: DateTime.now(),
+          birthday: _selectedBirthday,
+        ));
 
     if (!mounted) return;
 
-    // Transition to Stage 3 (Welcome, then $name)
+    // Transition to Stage 4 (Welcome, then $name)
     setState(() {
       _isLoading = false;
       _stage = _OnboardingStage.welcome;
@@ -217,6 +225,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         return _buildHelloStage(isDark);
       case _OnboardingStage.input:
         return _buildInputStage(isDark);
+      case _OnboardingStage.birthday:
+        return _buildBirthdayStage(isDark);
       case _OnboardingStage.welcome:
         return _buildWelcomeStage(isDark);
     }
@@ -362,7 +372,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       cursorWidth: 2.0,
                       cursorRadius: const Radius.circular(2),
                       textCapitalization: TextCapitalization.words,
-                      onSubmitted: (_) => _submitName(),
+                      onSubmitted: (_) => _transitionToBirthday(),
                       decoration: InputDecoration(
                         hintText: 'Enter your name...',
                         hintStyle: GoogleFonts.inter(
@@ -395,7 +405,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
 
               // Vibrant iOS Blue Continue Button
               GestureDetector(
-                onTap: _isLoading ? null : _submitName,
+                onTap: _transitionToBirthday,
                 child: Container(
                   width: double.infinity,
                   height: 56,
@@ -411,28 +421,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ],
                   ),
                   child: Center(
-                    child: _isLoading
-                        ? const CupertinoActivityIndicator(color: Colors.white)
-                        : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Continue',
-                                style: GoogleFonts.inter(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.3,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(
-                                CupertinoIcons.arrow_right,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Continue',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                            color: Colors.white,
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          CupertinoIcons.arrow_right,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -442,6 +450,271 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           ),
         ),
       ),
+    );
+  }
+
+  // ─── Stage 3: iOS Birthday Picker ──────────────────────────────────────────
+  Widget _buildBirthdayStage(bool isDark) {
+    final textColor = isDark ? Colors.white : const Color(0xFF1A0A2E);
+    final subtextColor =
+        isDark ? const Color(0xFF8E8E93) : const Color(0xFF636366);
+
+    final dateFormatted = _selectedBirthday == null
+        ? 'Select your date of birth'
+        : '${_selectedBirthday!.day.toString().padLeft(2, '0')} / ${_selectedBirthday!.month.toString().padLeft(2, '0')} / ${_selectedBirthday!.year}';
+
+    return Center(
+      key: const ValueKey('birthday_stage'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(flex: 2),
+
+            // Subtle elegant calendar icon
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF007AFF).withValues(alpha: 0.12),
+                border: Border.all(
+                  color: const Color(0xFF007AFF).withValues(alpha: 0.30),
+                  width: 1.0,
+                ),
+              ),
+              child: const Center(
+                child: Icon(
+                  CupertinoIcons.calendar,
+                  color: Color(0xFF007AFF),
+                  size: 30,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Text(
+              'Date of birth',
+              style: GoogleFonts.inter(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.7,
+                color: textColor,
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Date Selection Pill / Modal trigger
+            GestureDetector(
+              onTap: () => _showCupertinoDatePicker(isDark),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 18),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0x1AFFFFFF)
+                          : const Color(0x1A000000),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.16)
+                            : Colors.black.withValues(alpha: 0.09),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          CupertinoIcons.calendar_today,
+                          color: Color(0xFF007AFF),
+                          size: 22,
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            dateFormatted,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: _selectedBirthday == null
+                                  ? FontWeight.w400
+                                  : FontWeight.w700,
+                              color: _selectedBirthday == null
+                                  ? subtextColor
+                                  : textColor,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          CupertinoIcons.chevron_down,
+                          size: 16,
+                          color: subtextColor.withValues(alpha: 0.6),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // Continue Button
+            GestureDetector(
+              onTap: _isLoading ? null : _finishOnboarding,
+              child: Container(
+                width: double.infinity,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF007AFF),
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF007AFF).withValues(alpha: 0.38),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: _isLoading
+                      ? const CupertinoActivityIndicator(color: Colors.white)
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Get Started',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.3,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              CupertinoIcons.checkmark_alt,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Skip for now button
+            CupertinoButton(
+              onPressed: _isLoading ? null : _finishOnboarding,
+              child: Text(
+                'Skip for now',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: subtextColor,
+                ),
+              ),
+            ),
+
+            const Spacer(flex: 3),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCupertinoDatePicker(bool isDark) {
+    HapticFeedback.lightImpact();
+    DateTime tempDate = _selectedBirthday ?? DateTime(2000, 1, 1);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              height: 310,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1C1C1E).withValues(alpha: 0.95)
+                    : const Color(0xFFF2F2F7).withValues(alpha: 0.95),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(
+                  top: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : Colors.black.withValues(alpha: 0.08),
+                  ),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // iOS Toolbar
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () => Navigator.pop(modalCtx),
+                          child: const Text('Cancel'),
+                        ),
+                        Text(
+                          'Date of Birth',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                        CupertinoButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => _selectedBirthday = tempDate);
+                            Navigator.pop(modalCtx);
+                          },
+                          child: const Text(
+                            'Done',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: CupertinoDatePicker(
+                      mode: CupertinoDatePickerMode.date,
+                      initialDateTime: tempDate,
+                      maximumDate: DateTime.now(),
+                      minimumYear: 1940,
+                      maximumYear: DateTime.now().year,
+                      onDateTimeChanged: (newDate) {
+                        tempDate = newDate;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 

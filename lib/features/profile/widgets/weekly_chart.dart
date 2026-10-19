@@ -18,11 +18,7 @@ class WeeklyChart extends StatelessWidget {
     const double maxY = 5.0;
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-    final textColor = isDark ? Colors.white : Colors.black;
-    final subtextColor =
-        isDark ? const Color(0xFF8E8E93) : const Color(0xFF636366);
-
-    // 7-Day iOS rainbow reference palette (Mon to Sun)
+    // 7 iOS signature colors for the 7 days of the week (Mon to Sun)
     const dayColors = [
       Color(0xFFFF5A52), // Mon: Soft Coral Red
       Color(0xFFFF9500), // Tue: Warm Tangerine Orange
@@ -32,6 +28,10 @@ class WeeklyChart extends StatelessWidget {
       Color(0xFF007AFF), // Sat: Apple Royal Blue
       Color(0xFFAF52DE), // Sun: Lilac Violet
     ];
+
+    final textColor = isDark ? Colors.white : Colors.black;
+    final subtextColor =
+        isDark ? const Color(0xFF8E8E93) : const Color(0xFF636366);
 
     return GlassContainer(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
@@ -113,7 +113,7 @@ class WeeklyChart extends StatelessWidget {
                           return const SizedBox.shrink();
                         }
                         final isToday = i == currentWeekdayIndex;
-                        final color = dayColors[i % dayColors.length];
+                        final dayColor = dayColors[i];
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
@@ -122,7 +122,7 @@ class WeeklyChart extends StatelessWidget {
                               fontSize: 11,
                               fontWeight:
                                   isToday ? FontWeight.w800 : FontWeight.w600,
-                              color: isToday ? color : subtextColor,
+                              color: isToday ? dayColor : subtextColor,
                             ),
                           ),
                         );
@@ -174,8 +174,8 @@ class WeeklyChart extends StatelessWidget {
                     final actualCount = i < data.length ? data[i] : 0;
                     // Cap the bar visual fill at maxY = 5
                     final displayY = actualCount.clamp(0, 5).toDouble();
-                    final color = dayColors[i % dayColors.length];
                     final exceedsLimit = actualCount > 5;
+                    final dayColor = dayColors[i];
 
                     return BarChartGroupData(
                       x: i,
@@ -187,14 +187,17 @@ class WeeklyChart extends StatelessWidget {
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(8),
                           ),
-                          gradient: LinearGradient(
-                            colors: [
-                              color.withValues(alpha: displayY > 0 ? 0.75 : 0.20),
-                              color.withValues(alpha: displayY > 0 ? 1.0 : 0.35),
-                            ],
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                          ),
+                          gradient: displayY > 0
+                              ? LinearGradient(
+                                  colors: [
+                                    dayColor.withValues(alpha: 0.75),
+                                    dayColor,
+                                  ],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                )
+                              : null,
+                          color: displayY == 0 ? Colors.transparent : null,
                           backDrawRodData: BackgroundBarChartRodData(
                             show: true,
                             toY: maxY,

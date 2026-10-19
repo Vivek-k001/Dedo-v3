@@ -38,7 +38,9 @@ class NotificationService {
         channelName,
         importance: Importance.high,
         priority: Priority.high,
-        color: const Color(0xFF7C4DFF),
+        icon: '@mipmap/ic_launcher',
+        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        color: const Color(0xFF007AFF), // Apple System Blue accent
         enableVibration: true,
         playSound: true,
       ),
@@ -66,7 +68,7 @@ class NotificationService {
         body: 'Starting in ${task.reminderMinutes} minutes',
         scheduledDate: reminderTime,
         channelId: 'dedo_reminder',
-        channelName: 'DEDO Reminders',
+        channelName: 'Dedo Reminders',
       );
     }
 
@@ -78,7 +80,7 @@ class NotificationService {
         body: task.note ?? 'Your task has started!',
         scheduledDate: task.startTime,
         channelId: 'dedo_start',
-        channelName: 'DEDO Start',
+        channelName: 'Dedo Start',
       );
     }
 
@@ -90,7 +92,7 @@ class NotificationService {
         body: 'Your task time has ended.',
         scheduledDate: task.endTime,
         channelId: 'dedo_end',
-        channelName: 'DEDO End',
+        channelName: 'Dedo End',
       );
     }
   }
